@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Bestandserfassung</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4ef;color:#1a1a1a;min-height:100vh;}
+.container{max-width:700px;margin:0 auto;padding:1rem 1rem 5rem;}
+.card{background:#fff;border-radius:14px;border:1px solid #e0e0e0;padding:1.25rem;margin-bottom:1rem;}
+.card-title{font-size:16px;font-weight:600;margin-bottom:1rem;}
+.progress-bar{display:flex;margin-bottom:1.5rem;border-radius:10px;overflow:hidden;border:1px solid #ddd;}
+.progress-step{flex:1;padding:10px 6px;text-align:center;font-size:12px;font-weight:600;background:#fff;color:#999;border-right:1px solid #ddd;}
+.progress-step:last-child{border-right:none;}
+.progress-step.active{background:#1a73e8;color:#fff;}
+.progress-step.done{background:#e6f4ea;color:#1e7e34;}
+.season-row{display:flex;gap:8px;margin-bottom:1rem;}
+.season-btn{flex:1;padding:12px;font-size:14px;font-weight:600;border:2px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;text-align:center;}
+.season-btn.reg{border-color:#81c995;background:#e6f4ea;color:#1e7e34;}
+.season-btn.fer{border-color:#ffb74d;background:#fff3e0;color:#e65100;}
+.season-btn.inactive{opacity:0.4;}
+.date-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0.5rem;}
+.date-group label{font-size:12px;color:#666;display:block;margin-bottom:4px;}
+.date-group input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;}
+.season-indicator{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:1rem;text-align:center;}
+.season-indicator.reg{background:#e6f4ea;color:#1e7e34;}
+.season-indicator.fer{background:#fff3e0;color:#e65100;}
+.completeness-bar{height:6px;border-radius:3px;background:#e0e0e0;margin-bottom:0.5rem;overflow:hidden;}
+.completeness-fill{height:100%;border-radius:3px;background:#1a73e8;transition:width 0.3s;}
+.completeness-text{font-size:12px;color:#666;margin-bottom:1rem;}
+.warning-box{padding:12px 14px;border-radius:8px;background:#fff3e0;border:1px solid #ffcc80;font-size:13px;color:#e65100;margin-bottom:1rem;display:none;}
+.warning-box.show{display:block;}
+.filter-bar{display:flex;gap:6px;margin-bottom:0.75rem;flex-wrap:wrap;}
+.filter-chip{padding:5px 12px;font-size:12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;background:#fff;color:#666;white-space:nowrap;}
+.filter-chip.active{background:#e8f0fe;color:#1a73e8;border-color:#a8c7fa;}
+.article-list{display:flex;flex-direction:column;gap:6px;max-height:480px;overflow-y:auto;}
+.article-row{display:grid;grid-template-columns:1fr 90px 30px;gap:8px;align-items:center;padding:10px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#fff;transition:all 0.2s;}
+.article-row.filled{border-color:#81c995;background:#f0faf3;}
+.article-row.bedarfs{background:#f9f9f9;}
+.article-name{font-size:13px;font-weight:500;}
+.article-meta{font-size:11px;color:#999;}
+.bestand-input{width:100%;padding:7px 8px;font-size:14px;text-align:center;border:1px solid #ddd;border-radius:7px;}
+.bestand-input:focus{outline:none;border-color:#1a73e8;}
+.article-row.filled .bestand-input{border-color:#81c995;background:#f0faf3;}
+.check-icon{font-size:16px;opacity:0;transition:opacity 0.2s;text-align:center;}
+.article-row.filled .check-icon{opacity:1;}
+.bedarf-tag{font-size:11px;padding:3px 8px;border-radius:12px;background:#fff3e0;color:#e65100;white-space:nowrap;}
+.mic-card{background:#fff;border-radius:14px;border:1px solid #e0e0e0;padding:1rem;margin-bottom:1rem;position:sticky;bottom:70px;z-index:10;box-shadow:0 2px 12px rgba(0,0,0,0.1);}
+.mic-row{display:flex;align-items:center;gap:10px;}
+.mic-btn{width:48px;height:48px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.mic-btn.listening{background:#fce8e6;border-color:#f28b82;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.mic-info{flex:1;min-width:0;}
+.mic-transcript{font-size:13px;color:#333;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mic-result{font-size:12px;margin-top:2px;}
+.mic-result.ok{color:#1e7e34;}
+.mic-result.err{color:#c62828;}
+.mic-save-btn{padding:8px 12px;font-size:13px;font-weight:600;border:none;border-radius:8px;background:#1a73e8;color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.mic-save-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;margin-top:1rem;}
+.btn-primary{flex:1;padding:13px;font-size:14px;font-weight:700;border:none;border-radius:10px;background:#1a73e8;color:#fff;cursor:pointer;}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-secondary{padding:13px 16px;font-size:14px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#555;cursor:pointer;}
+.btn-success{background:#1e7e34;}
+.status-bar{padding:10px 14px;border-radius:8px;font-size:13px;margin-top:0.75rem;min-height:38px;}
+.status-bar.idle{background:#f5f5f5;color:#666;}
+.status-bar.loading{background:#fff3e0;color:#e65100;}
+.status-bar.success{background:#e6f4ea;color:#1e7e34;}
+.status-bar.error{background:#fce8e6;color:#c62828;}
+.step-panel{display:none;}
+.step-panel.active{display:block;}
+.summary-section{margin-bottom:1.5rem;}
+.summary-section h3{font-size:14px;font-weight:700;margin-bottom:0.75rem;padding-bottom:6px;border-bottom:2px solid #e0e0e0;}
+.summary-table{width:100%;border-collapse:collapse;}
+.summary-table td{padding:8px 4px;font-size:13px;border-bottom:1px solid #f0f0f0;}
+.summary-table td:last-child{text-align:right;font-weight:600;color:#1a73e8;}
+.no-order{font-size:13px;color:#999;font-style:italic;padding:8px 4px;}
+.missing-list{font-size:13px;color:#e65100;margin-top:6px;line-height:1.8;}
+.export-box{background:#f5f5f5;border-radius:10px;padding:1rem;font-size:12px;font-family:monospace;white-space:pre-wrap;max-height:300px;overflow-y:auto;margin-top:1rem;}
+
+/* Setup screen */
+.setup-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f4ef;z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.setup-card{background:#fff;border-radius:16px;border:1px solid #e0e0e0;padding:2rem;max-width:480px;width:100%;}
+.setup-title{font-size:20px;font-weight:700;margin-bottom:0.5rem;}
+.setup-sub{font-size:14px;color:#666;margin-bottom:1.5rem;line-height:1.6;}
+.setup-label{font-size:13px;font-weight:600;margin-bottom:6px;display:block;}
+.setup-input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:monospace;margin-bottom:1rem;}
+.setup-input:focus{outline:none;border-color:#1a73e8;}
+.setup-hint{font-size:12px;color:#999;margin-bottom:1.5rem;line-height:1.5;}
+.setup-btn{width:100%;padding:14px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#1a73e8;color:#fff;cursor:pointer;}
+.setup-error{font-size:13px;color:#c62828;margin-bottom:1rem;display:none;}
+.setup-error.show{display:block;}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-title">🔑 Einrichtung</div>
+    <div class="setup-sub">Gib deinen Google Cloud Service Account Schlüssel ein. Er wird sicher in deinem Browser gespeichert und nie hochgeladen.</div>
+
+    <label class="setup-label">Client Email</label>
+    <input type="text" class="setup-input" id="setupEmail" placeholder="xyz@projekt.iam.gserviceaccount.com" />
+
+    <label class="setup-label">Private Key</label>
+    <textarea class="setup-input" id="setupKey" rows="5" placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"></textarea>
+
+    <div class="setup-hint">
+      Den Schlüssel findest du in der JSON-Datei die du von Google Cloud heruntergeladen hast.<br>
+      Felder: <b>client_email</b> und <b>private_key</b>
+    </div>
+
+    <div class="setup-error" id="setupError">Bitte beide Felder ausfüllen.</div>
+    <button class="setup-btn" onclick="saveSetup()">Speichern & starten</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="container" id="mainApp" style="display:none;">
+  <div style="padding:1rem 0 0.5rem;display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div style="font-size:20px;font-weight:700;">🛒 Bestandserfassung</div>
+      <div style="font-size:13px;color:#666;margin-top:2px;">Schritt-für-Schritt Bestellung vorbereiten</div>
+    </div>
+    <button onclick="resetSetup()" style="font-size:12px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;color:#666;">⚙️ Schlüssel</button>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-step active" id="ps1">1 · Modus</div>
+    <div class="progress-step" id="ps2">2 · Datum</div>
+    <div class="progress-step" id="ps3">3 · Bestände</div>
+    <div class="progress-step" id="ps4">4 · Zusammenfassung</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step-panel active" id="step1">
+    <div class="card">
+      <div class="card-title">☀️ Welcher Betriebsmodus?</div>
+      <div class="season-row">
+        <button class="season-btn" id="btnReg" onclick="setSeason('regulaer')">☀️ Regulärbetrieb</button>
+        <button class="season-btn" id="btnFer" onclick="setSeason('ferien')">🏖️ Ferienbetrieb</button>
+      </div>
+      <div style="font-size:13px;color:#666;">Regulär → Spalte G · Ferien → Spalte I</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="goStep(2)" id="btnStep1Next" disabled>Weiter →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-panel" id="step2">
+    <div class="card">
+      <div class="card-title">📅 Datum eingeben</div>
+      <div class="season-indicator" id="step2Indicator"></div>
+      <div class="date-row">
+        <div class="date-group">
+          <label>Datum Bestandsaufnahme</label>
+          <input type="date" id="dateInventory" />
+        </div>
+        <div class="date-group">
+          <label>Bestelldatum (für wann?)</label>
+          <input type="date" id="dateOrder" />
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(1)">← Zurück</button>
+      <button class="btn-primary" onclick="confirmDates()">Weiter →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-panel" id="step3">
+    <div class="season-indicator" id="step3Indicator"></div>
+    <div class="completeness-bar"><div class="completeness-fill" id="completenessFill" style="width:0%"></div></div>
+    <div class="completeness-text" id="completenessText">0 von 0 Artikel erfasst</div>
+    <div class="warning-box" id="warningBox"></div>
+    <div class="filter-bar" id="filterBar3"></div>
+    <div class="card" style="padding:0.75rem;">
+      <div class="article-list" id="articleList3"></div>
+    </div>
+    <div class="mic-card">
+      <div class="mic-row">
+        <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+        <div class="mic-info">
+          <div class="mic-transcript" id="micTranscript">Tippe 🎤 und sprich z.B. „Currywurst 9"</div>
+          <div class="mic-result" id="micResult"></div>
+        </div>
+        <button class="mic-save-btn" id="micSaveBtn" onclick="saveMicEntry()" disabled>Speichern</button>
+      </div>
+    </div>
+    <div class="status-bar idle" id="status3">Bereit</div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(2)">← Zurück</button>
+      <button class="btn-primary" onclick="checkAndProceed()">Zur Zusammenfassung →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step-panel" id="step4">
+    <div class="card">
+      <div class="card-title">📋 Bestellübersicht</div>
+      <div id="summaryContent"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(3)">← Zurück</button>
+      <button class="btn-primary btn-success" onclick="exportSummary()">📤 Exportieren / Teilen</button>
+    </div>
+    <div class="export-box" id="exportBox" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+const SPREADSHEET_ID = '1ibr7jaFuC1y7X4OmNrH4JI2Mc_bfuHC2qTtxqsZJk04';
+const SHEET_NAME = 'Tabellenblatt2';
+
+const ARTICLES = [
+  {name:'Bockwurst 100g', row:5, cat:'Kühlschrank', sup:'rauchhaupt', unit:'Pakete'},
+  {name:'Kassler Kamm', row:6, cat:'Kühlschrank', sup:'rauchhaupt', unit:'Stück'},
+  {name:'Currywurst 180g', row:8, cat:'Kühlschrank', sup:'rauchhaupt', unit:'Packs'},
+  {name:'Sprühsahne', row:9, cat:'Kühlschrank', sup:'rauchhaupt', unit:'Fl./Kart.'},
+  {name:'Pommes Welle', row:12, cat:'TK', sup:'rauchhaupt', unit:'Tüten'},
+  {name:'Chicken Nuggets', row:13, cat:'TK', sup:'rauchhaupt', unit:'Tüten'},
+  {name:'Schnitzel 180g', row:14, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Pizza Margherita', row:15, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
+  {name:'Pizza Salami', row:16, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
+  {name:'Pizza Schinken', row:17, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
+  {name:'Pizza BBQ', row:18, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
+  {name:'Pizza Speziale', row:19, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
+  {name:'Pizza Thunfisch', row:20, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
+  {name:'Pizza Grillgemüse', row:21, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
+  {name:'Eierkuchen', row:22, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Muffin Schoko', row:23, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Muffin Milka', row:24, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Muffin Oreo', row:25, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Muffin Blaubeere', row:26, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Landkuchen Käse-Aprikose', row:27, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
+  {name:'Landkuchen Rhabarber', row:28, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
+  {name:'Landkuchen Apfel', row:29, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
+  {name:'Landkuchen Blaubeere', row:30, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
+  {name:'Landkuchen Pflaume', row:31, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
+  {name:'Landkuchen Kirsch', row:32, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
+  {name:'Landkuchen Mohn', row:33, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
+  {name:'TK Suppengemüse', row:34, cat:'TK', sup:'rauchhaupt', unit:'Tüte'},
+  {name:'Chik\'n Burger', row:35, cat:'TK', sup:'rauchhaupt', unit:'–', bedarfs:true},
+  {name:'TK Hamburger', row:36, cat:'TK', sup:'rauchhaupt', unit:'–', bedarfs:true},
+  {name:'Mac\'n\'Cheese Burger', row:37, cat:'TK', sup:'rauchhaupt', unit:'–', bedarfs:true},
+  {name:'Ketchup portioniert', row:40, cat:'Vorräte', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Mayo portioniert', row:41, cat:'Vorräte', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Curryketchup', row:42, cat:'Vorräte', sup:'rauchhaupt', unit:'Eimer'},
+  {name:'Kondensmilch', row:43, cat:'Vorräte', sup:'rauchhaupt', unit:'Tetrapack'},
+  {name:'Pommessalz', row:44, cat:'Vorräte', sup:'rauchhaupt', unit:'Pack'},
+  {name:'Nui Australien', row:47, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Biscoff', row:48, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Oreo Sandwich', row:49, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Oreo Bites', row:50, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Milka Strawberry', row:51, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Milka Chocolate', row:52, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Mango', row:53, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Kaktus for Friends', row:54, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Wassermelone', row:55, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Smarties Popup', row:56, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
+  {name:'Orangen', row:60, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Zitronen', row:61, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Erdbeeren', row:62, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Minze', row:63, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Weißkraut', row:64, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Möhren', row:65, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Sellerie', row:66, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Porree', row:67, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Zwiebeln', row:68, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Milch 3,5%', row:70, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Quark 500g', row:71, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Kartoffelpuffer', row:72, cat:'Frische', sup:'eigen', unit:'Karton'},
+  {name:'Apfelmus', row:73, cat:'Frische', sup:'eigen', unit:'Glas', bedarfs:true},
+  {name:'Süß-Sauersauce', row:75, cat:'Mios', sup:'mios', unit:'Karton'},
+  {name:'Schokolmilch', row:76, cat:'Mios', sup:'mios', unit:'Karton'},
+  {name:'Schwarzbier', row:77, cat:'Mios', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Clausthaler alkoholfrei', row:78, cat:'Mios', sup:'eigen', unit:'–', bedarfs:true},
+  {name:'Pommesspießer', row:79, cat:'Mios', sup:'eigen', unit:'–', bedarfs:true},
+];
+
+const CATS = ['Alle', ...new Set(ARTICLES.map(a => a.cat))];
+let season = null, currentStep = 1, activeFilter = 'Alle';
+let bestandValues = {}, accessToken = null;
+let recognition = null, isListening = false, pendingMic = null;
+let clientEmail = '', privateKey = '';
+
+// ---- SETUP ----
+function loadSetup() {
+  try {
+    clientEmail = localStorage.getItem('sa_email') || '';
+    privateKey = localStorage.getItem('sa_key') || '';
+  } catch(e) {}
+  if (clientEmail && privateKey) {
+    document.getElementById('setupScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    initApp();
+  }
+}
+
+function saveSetup() {
+  const email = document.getElementById('setupEmail').value.trim();
+  const key = document.getElementById('setupKey').value.trim();
+  if (!email || !key) {
+    document.getElementById('setupError').classList.add('show');
+    return;
+  }
+  try {
+    localStorage.setItem('sa_email', email);
+    localStorage.setItem('sa_key', key);
+  } catch(e) {}
+  clientEmail = email;
+  privateKey = key;
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  initApp();
+}
+
+function resetSetup() {
+  try { localStorage.removeItem('sa_email'); localStorage.removeItem('sa_key'); } catch(e) {}
+  clientEmail = ''; privateKey = '';
+  document.getElementById('setupEmail').value = '';
+  document.getElementById('setupKey').value = '';
+  document.getElementById('setupScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+}
+
+function initApp() {
+  const today = new Date();
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  const fmt = d => d.toISOString().split('T')[0];
+  document.getElementById('dateInventory').value = fmt(today);
+  document.getElementById('dateOrder').value = fmt(tomorrow);
+  renderFilterBar();
+  renderArticleList();
+  requestMicPermission();
+}
+
+function requestMicPermission() {
+  if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) return;
+  navigator.mediaDevices && navigator.mediaDevices.getUserMedia({audio:true})
+    .then(s => { s.getTracks().forEach(t=>t.stop()); })
+    .catch(() => {});
+}
+
+// ---- SEASON / STEPS ----
+function setSeason(s) {
+  season = s;
+  document.getElementById('btnReg').className = 'season-btn' + (s==='regulaer'?' reg':' inactive');
+  document.getElementById('btnFer').className = 'season-btn' + (s==='ferien'?' fer':' inactive');
+  document.getElementById('btnStep1Next').disabled = false;
+  const label = s==='regulaer' ? '☀️ Regulärbetrieb – Bestand → Spalte G' : '🏖️ Ferienbetrieb – Bestand → Spalte I';
+  const cls = s==='regulaer' ? 'reg' : 'fer';
+  ['step2Indicator','step3Indicator'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){ el.textContent=label; el.className='season-indicator '+cls; }
+  });
+}
+
+function getColumn() { return season==='regulaer' ? 'G' : 'I'; }
+
+function goStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.step-panel').forEach((p,i) => p.classList.toggle('active', i+1===n));
+  ['ps1','ps2','ps3','ps4'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1===n) el.classList.add('active');
+    else if(i+1<n) el.classList.add('done');
+  });
+  if(n===3) updateCompleteness();
+}
+
+function confirmDates() {
+  if(!document.getElementById('dateInventory').value || !document.getElementById('dateOrder').value) {
+    alert('Bitte beide Daten eintragen.'); return;
+  }
+  goStep(3);
+}
+
+// ---- ARTICLE LIST ----
+function renderFilterBar() {
+  document.getElementById('filterBar3').innerHTML = CATS.map(c =>
+    `<button class="filter-chip${c===activeFilter?' active':''}" onclick="setFilter('${c}')">${c}</button>`
+  ).join('');
+}
+
+function setFilter(c) { activeFilter=c; renderFilterBar(); renderArticleList(); }
+
+function renderArticleList() {
+  const filtered = activeFilter==='Alle' ? ARTICLES : ARTICLES.filter(a=>a.cat===activeFilter);
+  document.getElementById('articleList3').innerHTML = filtered.map(a => {
+    const val = bestandValues[a.row];
+    const filled = val !== undefined;
+    if(a.bedarfs) return `
+      <div class="article-row bedarfs${filled?' filled':''}">
+        <div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)}</div></div>
+        <span class="bedarf-tag">Bedarf prüfen</span>
+        <span class="check-icon">✅</span>
+      </div>`;
+    return `
+      <div class="article-row${filled?' filled':''}" id="arow-${a.row}">
+        <div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${a.unit}</div></div>
+        <input type="number" class="bestand-input" id="inp-${a.row}" placeholder="Bestand"
+          step="0.25" min="0" value="${val!==undefined?val:''}"
+          oninput="handleInput(${a.row},this.value)" onblur="saveRow(${a.row})" />
+        <span class="check-icon">✅</span>
+      </div>`;
+  }).join('');
+}
+
+function supLabel(s) {
+  return s==='rauchhaupt'?'Rauchhaupt':s==='mios'?'Mios':'Eigeneinkauf';
+}
+
+function handleInput(row, val) {
+  bestandValues[row] = val==='' ? undefined : parseFloat(val);
+  const el = document.getElementById(`arow-${row}`);
+  if(el) el.classList.toggle('filled', val!=='');
+  updateCompleteness();
+}
+
+function updateCompleteness() {
+  const trackable = ARTICLES.filter(a=>!a.bedarfs);
+  const filled = trackable.filter(a=>bestandValues[a.row]!==undefined).length;
+  const pct = trackable.length ? Math.round(filled/trackable.length*100) : 0;
+  document.getElementById('completenessFill').style.width = pct+'%';
+  document.getElementById('completenessText').textContent = `${filled} von ${trackable.length} Artikel erfasst (${pct}%)`;
+}
+
+async function saveRow(row) {
+  const val = bestandValues[row];
+  if(val===undefined) return;
+  try { await writeToSheet(row,val); setStatus3('✓ Gespeichert','success'); }
+  catch(e) { setStatus3('Fehler: '+e.message,'error'); }
+}
+
+function setStatus3(msg, type) {
+  const el = document.getElementById('status3');
+  el.className='status-bar '+type; el.textContent=msg;
+  if(type==='success') setTimeout(()=>{ el.className='status-bar idle'; el.textContent='Bereit'; },3000);
+}
+
+function checkAndProceed() {
+  const missing = ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]===undefined);
+  const wb = document.getElementById('warningBox');
+  if(missing.length>0) {
+    wb.className='warning-box show';
+    wb.innerHTML=`⚠️ ${missing.length} Artikel noch nicht erfasst:<div class="missing-list">${missing.map(a=>a.name).join(' · ')}</div>`;
+    if(!confirm(`${missing.length} Artikel fehlen noch. Trotzdem weiter?`)) return;
+  } else { wb.className='warning-box'; }
+  buildSummary(); goStep(4);
+}
+
+function buildSummary() {
+  const di = document.getElementById('dateInventory').value;
+  const do_ = document.getElementById('dateOrder').value;
+  const sl = season==='regulaer'?'Regulärbetrieb ☀️':'Ferienbetrieb 🏖️';
+  const rh = ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&bestandValues[a.row]!==undefined);
+  const mi = ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs&&bestandValues[a.row]!==undefined);
+  const eg = ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs&&bestandValues[a.row]!==undefined);
+  const eb = ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
+  const rows = items => items.map(a=>`<tr><td>${a.name}</td><td>${bestandValues[a.row]} ${a.unit}</td></tr>`).join('');
+  document.getElementById('summaryContent').innerHTML = `
+    <div style="font-size:13px;color:#666;margin-bottom:1rem;">📅 Aufnahme: <b>${di}</b> · Bestellung für: <b>${do_}</b> · ${sl}</div>
+    <div class="summary-section"><h3>📦 Rauchhaupt</h3>${rh.length?`<table class="summary-table">${rows(rh)}</table>`:'<div class="no-order">Keine Artikel</div>'}</div>
+    ${mi.length?`<div class="summary-section"><h3>🏪 Mios</h3><table class="summary-table">${rows(mi)}</table></div>`:''}
+    <div class="summary-section"><h3>🛒 Eigeneinkauf</h3>
+      ${eg.length?`<table class="summary-table">${rows(eg)}</table>`:''}
+      ${eb.length?`<div style="margin-top:8px;font-size:13px;color:#666;">Bedarf prüfen: ${eb.map(a=>a.name).join(', ')}</div>`:''}
+      ${!eg.length&&!eb.length?'<div class="no-order">Keine Artikel</div>':''}
+    </div>`;
+}
+
+function exportSummary() {
+  const di = document.getElementById('dateInventory').value;
+  const do_ = document.getElementById('dateOrder').value;
+  const sl = season==='regulaer'?'Regulärbetrieb':'Ferienbetrieb';
+  let txt = `BESTELLLISTE\nAufnahme: ${di} | Bestellung für: ${do_} | ${sl}\n${'='.repeat(40)}\n\n`;
+  const rh = ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&bestandValues[a.row]!==undefined);
+  const mi = ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs&&bestandValues[a.row]!==undefined);
+  const eg = ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs&&bestandValues[a.row]!==undefined);
+  const eb = ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
+  txt += `📦 RAUCHHAUPT\n${'-'.repeat(30)}\n`;
+  rh.forEach(a=>txt+=`  ${a.name.padEnd(28)} ${bestandValues[a.row]} ${a.unit}\n`);
+  if(mi.length){ txt+=`\n🏪 MIOS\n${'-'.repeat(30)}\n`; mi.forEach(a=>txt+=`  ${a.name.padEnd(28)} ${bestandValues[a.row]} ${a.unit}\n`); }
+  txt+=`\n🛒 EIGENEINKAUF\n${'-'.repeat(30)}\n`;
+  eg.forEach(a=>txt+=`  ${a.name.padEnd(28)} ${bestandValues[a.row]} ${a.unit}\n`);
+  if(eb.length) txt+=`\n  Bedarf prüfen: ${eb.map(a=>a.name).join(', ')}\n`;
+  const box = document.getElementById('exportBox');
+  box.style.display='block'; box.textContent=txt;
+  if(navigator.share) navigator.share({title:'Bestellliste',text:txt}).catch(()=>{});
+  else if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>alert('✓ In Zwischenablage kopiert!'));
+}
+
+// ---- MIC ----
+function toggleMic() {
+  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){
+    document.getElementById('micTranscript').textContent='Nur in Chrome verfügbar.'; return;
+  }
+  if(isListening){ recognition.stop(); return; }
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang='de-DE'; recognition.continuous=false; recognition.interimResults=true;
+  recognition.onstart=()=>{ isListening=true; document.getElementById('micBtn').classList.add('listening'); document.getElementById('micBtn').textContent='⏹'; document.getElementById('micTranscript').textContent='Zuhören...'; document.getElementById('micResult').textContent=''; document.getElementById('micSaveBtn').disabled=true; pendingMic=null; };
+  recognition.onresult=(e)=>{ let interim='',final=''; for(let i=e.resultIndex;i<e.results.length;i++){ if(e.results[i].isFinal) final+=e.results[i][0].transcript; else interim+=e.results[i][0].transcript; } document.getElementById('micTranscript').textContent=final||interim; if(final) parseMic(final.trim()); };
+  recognition.onerror=(ev)=>{ isListening=false; document.getElementById('micBtn').classList.remove('listening'); document.getElementById('micBtn').textContent='🎤'; if(ev.error==='not-allowed') document.getElementById('micTranscript').textContent='Mikrofon verweigert – bitte in Chrome erlauben.'; };
+  recognition.onend=()=>{ isListening=false; document.getElementById('micBtn').classList.remove('listening'); document.getElementById('micBtn').textContent='🎤'; };
+  recognition.start();
+}
+
+function parseMic(text) {
+  const lower=text.toLowerCase();
+  const numMatch=lower.match(/(\d+[,.]?\d*)/);
+  if(!numMatch){ showMicResult(false,`Keine Zahl: „${text}"`); return; }
+  const value=parseFloat(numMatch[1].replace(',','.'));
+  let best=null,score=0;
+  for(const a of ARTICLES){ const words=a.name.toLowerCase().split(/\s+/); let s=0; for(const w of words){ if(w.length>2&&lower.includes(w)) s+=w.length; } if(s>score){ score=s; best=a; } }
+  if(!best||score<3){ showMicResult(false,`Nicht erkannt: „${text}"`); return; }
+  pendingMic={article:best,value};
+  showMicResult(true,`${best.name} → ${value} ${best.unit}`);
+  document.getElementById('micSaveBtn').disabled=false;
+}
+
+function showMicResult(ok,msg){ const el=document.getElementById('micResult'); el.className='mic-result '+(ok?'ok':'err'); el.textContent=(ok?'✓ ':'⚠ ')+msg; }
+
+async function saveMicEntry() {
+  if(!pendingMic) return;
+  const {article,value}=pendingMic;
+  bestandValues[article.row]=value;
+  const inp=document.getElementById(`inp-${article.row}`);
+  if(inp) inp.value=value;
+  const rowEl=document.getElementById(`arow-${article.row}`);
+  if(rowEl) rowEl.classList.add('filled');
+  document.getElementById('micSaveBtn').disabled=true;
+  document.getElementById('micTranscript').textContent='Tippe 🎤 und sprich z.B. „Currywurst 9"';
+  document.getElementById('micResult').textContent='';
+  pendingMic=null; updateCompleteness();
+  setStatus3(`✓ ${article.name} = ${value} ${article.unit} gespeichert`,'success');
+  try { await writeToSheet(article.row,value); } catch(e){ setStatus3('Sheets-Fehler: '+e.message,'error'); }
+}
+
+// ---- SHEETS API ----
+async function getAccessToken() {
+  const now=Math.floor(Date.now()/1000);
+  const hdr=btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const clm=btoa(JSON.stringify({iss:clientEmail,scope:'https://www.googleapis.com/auth/spreadsheets',aud:'https://oauth2.googleapis.com/token',exp:now+3600,iat:now})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const toSign=`${hdr}.${clm}`;
+  const keyData=privateKey.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g,'');
+  const bin=Uint8Array.from(atob(keyData),c=>c.charCodeAt(0));
+  const ck=await crypto.subtle.importKey('pkcs8',bin.buffer,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
+  const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',ck,new TextEncoder().encode(toSign));
+  const sigB64=btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const jwt=`${toSign}.${sigB64}`;
+  const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`});
+  const d=await r.json();
+  if(!d.access_token) throw new Error('Token-Fehler');
+  return d.access_token;
+}
+
+async function writeToSheet(row,value) {
+  if(!accessToken) accessToken=await getAccessToken();
+  const range=`${SHEET_NAME}!${getColumn()}${row}`;
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  const r=await fetch(url,{method:'PUT',headers:{'Authorization':`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({values:[[value]]})});
+  if(!r.ok){ accessToken=null; throw new Error(`Sheets ${r.status}`); }
+}
+
+loadSetup();
+</script>
+</body>
+</html>
