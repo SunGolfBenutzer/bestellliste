@@ -400,15 +400,31 @@ function setStatus3(msg,type){
   const el=document.getElementById('status3');el.className='status-bar '+type;el.textContent=msg;
   if(type==='success')setTimeout(()=>{el.className='status-bar idle';el.textContent='Bereit';},3000);
 }
-function checkAndProceed(){
+async function checkAndProceed(){
   const missing=ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]===undefined);
   const wb=document.getElementById('warningBox');
   if(missing.length>0){
     wb.className='warning-box show';
-    wb.innerHTML=`⚠️ ${missing.length} Artikel noch nicht erfasst – leere Felder werden als Bestand 0 gewertet:<div style="margin-top:6px;line-height:1.8;">${missing.map(a=>a.name).join(' · ')}</div>`;
+    wb.innerHTML=`⚠️ ${missing.length} Artikel nicht erfasst – werden als Bestand 0 gespeichert und voll bestellt.`;
   } else {wb.className='warning-box';}
-  // Set missing to 0
+  // Set missing to 0 and write ALL to sheets
   ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]===undefined).forEach(a=>{bestandValues[a.row]=0;});
+  setStatus3('Speichere alle Bestände in Google Sheets...','loading');
+  try{
+    if(!accessToken)accessToken=await getAccessToken();
+    const col=getBestandCol();
+    const data=ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]!==undefined).map(a=>({
+      range:`${SHEET_NAME}!${col}${a.row}`,values:[[bestandValues[a.row]]]
+    }));
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`;
+    const r=await fetch(url,{method:'POST',headers:{'Authorization':`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({valueInputOption:'USER_ENTERED',data})});
+    if(!r.ok){accessToken=null;throw new Error(`Sheets ${r.status}`);}
+    setStatus3('✓ Alle Bestände gespeichert','success');
+    // Wait briefly for Sheets formulas to recalculate
+    await new Promise(res=>setTimeout(res,1500));
+  }catch(e){
+    setStatus3('Fehler beim Speichern: '+e.message,'error');
+  }
   goStep(4);
 }
 
@@ -542,6 +558,18 @@ function renderSummary(){
     ${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}
   </div>`;
 
+  // Eigeneinkauf bedarf input fields
+  const bedarfsEigenInputHtml=bedarfsEigen.length?`<div style="margin-top:1rem;border-top:2px solid #e0e0e0;padding-top:1rem;">
+    <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:0.5rem;">📝 Bedarfsartikel – Menge eintragen:</div>
+    ${bedarfsEigen.map(a=>`<div class="bedarf-input-row">
+      <div><div style="font-size:13px;font-weight:500;">${a.name}</div><div style="font-size:11px;color:#999;">Eigeneinkauf</div></div>
+      <input type="number" class="bedarf-order-input" id="bedarf-${a.row}" placeholder="Menge" min="0" step="1"
+        value="${bedarfOrderValues[a.row]||''}"
+        oninput="bedarfOrderValues[${a.row}]=this.value?parseInt(this.value):0;" />
+      <button class="bedarf-save-btn" id="bedarf-btn-${a.row}" onclick="saveBedarfRow(${a.row})">Speichern</button>
+    </div>`).join('')}
+  </div>`:'';
+
   document.getElementById('summaryContent').innerHTML=`
     <div class="card">
       <div class="card-title">📦 Rauchhaupt Bestellung</div>
@@ -555,7 +583,7 @@ function renderSummary(){
     <div class="card">
       <div class="card-title">🛒 Eigeneinkauf (NP / Mios)</div>
       ${eigenRows?`<table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${eigenRows}</tbody></table>`:''}
-      ${bedarfsEigen.length?`<div style="margin-top:12px;font-size:13px;color:#666;padding:8px 4px;border-top:1px solid #f0f0f0;"><b>Bedarf manuell prüfen:</b><br>${bedarfsEigen.map(a=>a.name).join(' · ')}</div>`:''}
+      ${bedarfsEigenInputHtml}
     </div>`;
 }
 
@@ -590,7 +618,10 @@ function printEigen(){
   const eigenArticles=ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs);
   const bedarfsEigen=ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
   let rows=eigenArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td></tr>`).join('');
-  let bedarfsRows=bedarfsEigen.map(a=>`<tr><td>${a.name}</td><td style="text-align:right;color:#e65100;">prüfen</td></tr>`).join('');
+  let bedarfsRows=bedarfsEigen.map(a=>{
+    const v=bedarfOrderValues[a.row]||0;
+    return`<tr><td>${a.name}</td><td style="text-align:right;${v>0?'font-weight:700;':'color:#e65100;'}">${v>0?v+' –':'prüfen'}</td></tr>`;
+  }).join('');
   openPrintWindow('🛒 Eigeneinkauf',di,do_,sl,
     `<table style="width:100%;border-collapse:collapse;">${rows+bedarfsRows}</table>`);
 }
