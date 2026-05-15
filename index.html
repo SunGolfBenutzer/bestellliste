@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -11,10 +12,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .card{background:#fff;border-radius:14px;border:1px solid #e0e0e0;padding:1.25rem;margin-bottom:1rem;}
 .card-title{font-size:16px;font-weight:600;margin-bottom:1rem;}
 .progress-bar{display:flex;margin-bottom:1.5rem;border-radius:10px;overflow:hidden;border:1px solid #ddd;}
-.progress-step{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:600;background:#fff;color:#999;border-right:1px solid #ddd;}
+.progress-step{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:600;background:#fff;color:#999;border-right:1px solid #ddd;cursor:pointer;transition:all 0.2s;}
 .progress-step:last-child{border-right:none;}
 .progress-step.active{background:#1a73e8;color:#fff;}
 .progress-step.done{background:#e6f4ea;color:#1e7e34;}
+.progress-step.done:hover{background:#d0eeda;}
 .season-row{display:flex;gap:8px;margin-bottom:1rem;}
 .season-btn{flex:1;padding:12px;font-size:14px;font-weight:600;border:2px solid #ddd;border-radius:10px;background:#fff;cursor:pointer;text-align:center;}
 .season-btn.reg{border-color:#81c995;background:#e6f4ea;color:#1e7e34;}
@@ -58,8 +60,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mic-result.warn{color:#e65100;}
 .mic-save-btn{padding:8px 12px;font-size:13px;font-weight:600;border:none;border-radius:8px;background:#1a73e8;color:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .mic-save-btn:disabled{opacity:0.4;cursor:not-allowed;}
-
-/* Confirm dialog */
 .confirm-dialog{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:1rem;}
 .confirm-dialog.show{display:flex;}
 .confirm-box{background:#fff;border-radius:16px;padding:1.5rem;max-width:360px;width:100%;}
@@ -69,9 +69,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .confirm-option{padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer;background:#fff;text-align:left;}
 .confirm-option:hover{background:#f0f0f0;}
 .confirm-btns{display:flex;gap:8px;}
-.confirm-yes{flex:1;padding:10px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
 .confirm-no{padding:10px 16px;background:#fff;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer;}
-
 .btn-row{display:flex;gap:8px;margin-top:1rem;}
 .btn-primary{flex:1;padding:13px;font-size:14px;font-weight:700;border:none;border-radius:10px;background:#1a73e8;color:#fff;cursor:pointer;}
 .btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
@@ -84,21 +82,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .status-bar.error{background:#fce8e6;color:#c62828;}
 .step-panel{display:none;}
 .step-panel.active{display:block;}
-
-/* Summary */
-.summary-section{margin-bottom:1.5rem;}
-.summary-section h3{font-size:14px;font-weight:700;margin-bottom:0.75rem;padding-bottom:6px;border-bottom:2px solid #e0e0e0;display:flex;align-items:center;gap:8px;}
 .summary-table{width:100%;border-collapse:collapse;}
 .summary-table th{font-size:11px;color:#999;text-align:left;padding:4px;border-bottom:1px solid #e0e0e0;font-weight:600;}
 .summary-table th:last-child{text-align:right;}
 .summary-table td{padding:8px 4px;font-size:13px;border-bottom:1px solid #f0f0f0;}
-.summary-table td:last-child{text-align:right;font-weight:700;color:#1a73e8;}
-.summary-table td.zero{color:#999;font-weight:400;}
-.no-order{font-size:13px;color:#999;font-style:italic;padding:8px 4px;}
-.missing-list{font-size:13px;color:#e65100;margin-top:6px;line-height:1.8;}
+.summary-table td.order-amt{text-align:right;font-weight:700;color:#1a73e8;}
+.summary-table td.order-zero{text-align:right;color:#ccc;}
 .loading-overlay{text-align:center;padding:2rem;color:#666;font-size:14px;}
-
-/* Setup */
+.order-total{padding:12px 14px;border-radius:10px;font-size:15px;font-weight:700;margin-top:1rem;text-align:center;}
+.order-total.ok{background:#e6f4ea;color:#1e7e34;}
+.order-total.warn{background:#fce8e6;color:#c62828;}
+.landkuchen-summary{padding:12px 14px;border-radius:10px;background:#e8f0fe;border:1px solid #a8c7fa;font-size:13px;margin-bottom:1rem;}
 .setup-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f4ef;z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem;}
 .setup-card{background:#fff;border-radius:16px;border:1px solid #e0e0e0;padding:2rem;max-width:480px;width:100%;}
 .setup-title{font-size:20px;font-weight:700;margin-bottom:0.5rem;}
@@ -110,20 +104,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .setup-btn{width:100%;padding:14px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#1a73e8;color:#fff;cursor:pointer;}
 .setup-error{font-size:13px;color:#c62828;margin-bottom:1rem;display:none;}
 .setup-error.show{display:block;}
-
-/* PDF print styles */
-@media print {
-  .no-print{display:none!important;}
-  .print-section{display:block!important;}
-  body{background:#fff;}
-  .container{padding:0;}
-}
-.print-section{display:none;}
+@media print{.no-print{display:none!important;}body{background:#fff;}.container{padding:0;}}
 </style>
 </head>
 <body>
 
-<!-- SETUP -->
 <div class="setup-screen" id="setupScreen">
   <div class="setup-card">
     <div class="setup-title">🔑 Einrichtung</div>
@@ -138,19 +123,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- CONFIRM DIALOG -->
 <div class="confirm-dialog" id="confirmDialog">
   <div class="confirm-box">
     <div class="confirm-title" id="confirmTitle">Meintest du...?</div>
     <div class="confirm-msg" id="confirmMsg"></div>
     <div class="confirm-options" id="confirmOptions"></div>
-    <div class="confirm-btns">
-      <button class="confirm-no" onclick="closeConfirm()">Abbrechen</button>
-    </div>
+    <div class="confirm-btns"><button class="confirm-no" onclick="closeConfirm()">Abbrechen</button></div>
   </div>
 </div>
 
-<!-- MAIN APP -->
 <div class="container" id="mainApp" style="display:none;">
   <div style="padding:1rem 0 0.5rem;display:flex;justify-content:space-between;align-items:center;">
     <div>
@@ -161,13 +142,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <div class="progress-bar no-print">
-    <div class="progress-step active" id="ps1">1 · Modus</div>
-    <div class="progress-step" id="ps2">2 · Datum</div>
-    <div class="progress-step" id="ps3">3 · Bestände</div>
-    <div class="progress-step" id="ps4">4 · Bestellung</div>
+    <div class="progress-step active" id="ps1" onclick="goStep(1)">1 · Modus</div>
+    <div class="progress-step" id="ps2" onclick="goStep(2)">2 · Datum</div>
+    <div class="progress-step" id="ps3" onclick="goStep(3)">3 · Bestände</div>
+    <div class="progress-step" id="ps4" onclick="goStep(4)">4 · Bestellung</div>
   </div>
 
-  <!-- STEP 1 -->
   <div class="step-panel active" id="step1">
     <div class="card">
       <div class="card-title">☀️ Welcher Betriebsmodus?</div>
@@ -182,7 +162,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- STEP 2 -->
   <div class="step-panel" id="step2">
     <div class="card">
       <div class="card-title">📅 Datum eingeben</div>
@@ -198,7 +177,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- STEP 3 -->
   <div class="step-panel" id="step3">
     <div class="season-indicator" id="step3Indicator"></div>
     <div class="completeness-bar"><div class="completeness-fill" id="completenessFill" style="width:0%"></div></div>
@@ -223,23 +201,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 
-  <!-- STEP 4 -->
   <div class="step-panel" id="step4">
     <div id="summaryLoading" class="loading-overlay">⏳ Bestellmengen werden aus Google Sheets geladen...</div>
-    <div id="summaryContent" style="display:none;">
-      <div class="card" id="summaryRauchhaupt">
-        <div class="card-title">📦 Rauchhaupt Bestellung</div>
-        <div id="rhContent"></div>
-      </div>
-      <div class="card" id="summaryMios" style="display:none;">
-        <div class="card-title">🏪 Mios Bestellung</div>
-        <div id="miosContent"></div>
-      </div>
-      <div class="card" id="summaryEigen">
-        <div class="card-title">🛒 Eigeneinkauf (NP / Mios)</div>
-        <div id="eigenContent"></div>
-      </div>
-    </div>
+    <div id="summaryContent" style="display:none;"></div>
     <div class="btn-row no-print" id="summaryBtns" style="display:none;">
       <button class="btn-secondary" onclick="goStep(3)">← Zurück</button>
       <button class="btn-primary" onclick="printRauchhaupt()" style="background:#1565c0;">🖨️ Rauchhaupt PDF</button>
@@ -249,114 +213,116 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-const SPREADSHEET_ID = '1ibr7jaFuC1y7X4OmNrH4JI2Mc_bfuHC2qTtxqsZJk04';
-const SHEET_NAME = 'Tabellenblatt2';
+const SPREADSHEET_ID='1ibr7jaFuC1y7X4OmNrH4JI2Mc_bfuHC2qTtxqsZJk04';
+const SHEET_NAME='Tabellenblatt2';
+const MIN_ORDER=600;
 
-const ARTICLES = [
-  {name:'Bockwurst 100g', aliases:['bockwurst','wurst'], row:5, cat:'Kühlschrank', sup:'rauchhaupt', unit:'Pakete'},
-  {name:'Kassler Kamm', aliases:['kassler','kasseler','kamm'], row:6, cat:'Kühlschrank', sup:'rauchhaupt', unit:'Stück'},
-  {name:'Currywurst 180g', aliases:['currywurst','curry'], row:8, cat:'Kühlschrank', sup:'rauchhaupt', unit:'Packs'},
-  {name:'Sprühsahne', aliases:['sprühsahne','sahne','sprühsahne','cream'], row:9, cat:'Kühlschrank', sup:'rauchhaupt', unit:'Fl./Kart.'},
-  {name:'Pommes Welle', aliases:['pommes','frites','pommes welle'], row:12, cat:'TK', sup:'rauchhaupt', unit:'Tüten'},
-  {name:'Chicken Nuggets', aliases:['nuggets','chicken','hühnchen'], row:13, cat:'TK', sup:'rauchhaupt', unit:'Tüten'},
-  {name:'Schnitzel 180g', aliases:['schnitzel'], row:14, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Pizza Margherita', aliases:['margherita','pizza margherita'], row:15, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
-  {name:'Pizza Salami', aliases:['pizza salami','salami'], row:16, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
-  {name:'Pizza Schinken', aliases:['pizza schinken','schinken pizza'], row:17, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
-  {name:'Pizza BBQ', aliases:['pizza bbq','bbq'], row:18, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
-  {name:'Pizza Speziale', aliases:['speziale','pizza speziale'], row:19, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
-  {name:'Pizza Thunfisch', aliases:['thunfisch','pizza thunfisch'], row:20, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
-  {name:'Pizza Grillgemüse', aliases:['grillgemüse','gemüse pizza'], row:21, cat:'TK', sup:'rauchhaupt', unit:'Stück'},
-  {name:'Eierkuchen', aliases:['eierkuchen','pfannkuchen'], row:22, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Muffin Schoko', aliases:['muffin schoko','schoko muffin','schokomuffin'], row:23, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Muffin Milka', aliases:['muffin milka','milka muffin'], row:24, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Muffin Oreo', aliases:['muffin oreo','oreo muffin'], row:25, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Muffin Blaubeere', aliases:['muffin blaubeere','blaubeere muffin','blaubeermuffin'], row:26, cat:'TK', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Landkuchen Käse-Aprikose', aliases:['käse aprikose','aprikose','käsekuchen'], row:27, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
-  {name:'Landkuchen Rhabarber', aliases:['rhabarber'], row:28, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
-  {name:'Landkuchen Apfel', aliases:['apfelkuchen','apfel kuchen'], row:29, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
-  {name:'Landkuchen Blaubeere', aliases:['blaubeere kuchen','blaubeerkuchen'], row:30, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
-  {name:'Landkuchen Pflaume', aliases:['pflaume','pflaumen'], row:31, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
-  {name:'Landkuchen Kirsch', aliases:['kirsch','kirschen'], row:32, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
-  {name:'Landkuchen Mohn', aliases:['mohn'], row:33, cat:'TK', sup:'rauchhaupt', unit:'Kuchen'},
-  {name:'TK Suppengemüse', aliases:['suppengemüse','suppe gemüse'], row:34, cat:'TK', sup:'rauchhaupt', unit:'Tüte'},
-  {name:'Chik\'n Burger', aliases:['chikn','chicken burger','chick'], row:35, cat:'TK', sup:'rauchhaupt', unit:'–', bedarfs:true},
-  {name:'TK Hamburger', aliases:['hamburger','burger'], row:36, cat:'TK', sup:'rauchhaupt', unit:'–', bedarfs:true},
-  {name:'Mac\'n\'Cheese Burger', aliases:['mac','cheese burger','macncheese'], row:37, cat:'TK', sup:'rauchhaupt', unit:'–', bedarfs:true},
-  {name:'Ketchup portioniert', aliases:['ketchup','tomatenketchup'], row:40, cat:'Vorräte', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Mayo portioniert', aliases:['mayo','mayonnaise'], row:41, cat:'Vorräte', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Curryketchup', aliases:['curryketchup','curry ketchup'], row:42, cat:'Vorräte', sup:'rauchhaupt', unit:'Eimer'},
-  {name:'Kondensmilch', aliases:['kondensmilch','kondens'], row:43, cat:'Vorräte', sup:'rauchhaupt', unit:'Tetrapack'},
-  {name:'Pommessalz', aliases:['pommessalz','salz'], row:44, cat:'Vorräte', sup:'rauchhaupt', unit:'Pack'},
-  {name:'Nui Australien', aliases:['nui','australien'], row:47, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Biscoff', aliases:['biscoff'], row:48, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Oreo Sandwich', aliases:['oreo sandwich','oreo'], row:49, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Oreo Bites', aliases:['oreo bites','bites'], row:50, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Milka Strawberry', aliases:['milka strawberry','strawberry','erdbeer milka'], row:51, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Milka Chocolate', aliases:['milka chocolate','milka schokolade'], row:52, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Mango Eis', aliases:['mango'], row:53, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Kaktus for Friends', aliases:['kaktus'], row:54, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Wassermelone Eis', aliases:['wassermelone'], row:55, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Smarties Popup', aliases:['smarties'], row:56, cat:'Eis', sup:'rauchhaupt', unit:'Karton'},
-  {name:'Orangen', aliases:['orangen','orange'], row:60, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Zitronen', aliases:['zitronen','zitrone'], row:61, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Erdbeeren', aliases:['erdbeeren','erdbeere'], row:62, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Minze', aliases:['minze'], row:63, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Weißkraut', aliases:['weißkraut','kraut'], row:64, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Möhren', aliases:['möhren','karotten'], row:65, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Sellerie', aliases:['sellerie'], row:66, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Porree', aliases:['porree','lauch'], row:67, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Zwiebeln', aliases:['zwiebeln','zwiebel'], row:68, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Milch 3,5%', aliases:['milch'], row:70, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Quark 500g', aliases:['quark'], row:71, cat:'Frische', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Kartoffelpuffer', aliases:['kartoffelpuffer','puffer'], row:72, cat:'Frische', sup:'eigen', unit:'Karton'},
-  {name:'Apfelmus', aliases:['apfelmus'], row:73, cat:'Frische', sup:'eigen', unit:'Glas', bedarfs:true},
-  {name:'Süß-Sauersauce', aliases:['süß sauer','süßsauer'], row:75, cat:'Mios', sup:'mios', unit:'Karton'},
-  {name:'Schokolmilch', aliases:['schokolmilch','schoko milch'], row:76, cat:'Mios', sup:'mios', unit:'Karton'},
-  {name:'Schwarzbier', aliases:['schwarzbier'], row:77, cat:'Mios', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Clausthaler alkoholfrei', aliases:['clausthaler','alkoholfrei'], row:78, cat:'Mios', sup:'eigen', unit:'–', bedarfs:true},
-  {name:'Pommesspießer', aliases:['pommesspießer','spießer'], row:79, cat:'Mios', sup:'eigen', unit:'–', bedarfs:true},
+// sup: rauchhaupt/mios/eigen, bedarfs: no formula, intOnly: whole numbers only
+// price: per order unit, orderUnit: KTN/BTL/PCK etc.
+// lkuchen: true = part of Landkuchen group
+const ARTICLES=[
+  {name:'Bockwurst 100g',aliases:['bockwurst','wurst'],row:5,cat:'Kühlschrank',sup:'rauchhaupt',unit:'PCK',price:6.49,intOnly:true},
+  {name:'Kassler Kamm',aliases:['kassler','kasseler','kamm'],row:6,cat:'Kühlschrank',sup:'rauchhaupt',unit:'KG',price:6.85,intOnly:true},
+  {name:'Currywurst 180g',aliases:['currywurst','curry wurst'],row:8,cat:'Kühlschrank',sup:'rauchhaupt',unit:'PCK',price:11.99,intOnly:true},
+  {name:'Sprühsahne',aliases:['sprühsahne','sahne'],row:9,cat:'Kühlschrank',sup:'rauchhaupt',unit:'DS',price:10.05,intOnly:true,sprühsahne:true},
+  {name:'Pommes Welle',aliases:['pommes','frites'],row:12,cat:'TK',sup:'rauchhaupt',unit:'BTL',price:3.99,intOnly:true},
+  {name:'Chicken Nuggets',aliases:['nuggets','chicken','hühnchen'],row:13,cat:'TK',sup:'rauchhaupt',unit:'BTL',price:5.75,intOnly:true},
+  {name:'Schnitzel 180g',aliases:['schnitzel'],row:14,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:44.51,intOnly:false},
+  {name:'Pizza Margherita',aliases:['margherita','pizza margherita'],row:15,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:20.06,intOnly:true},
+  {name:'Pizza Salami',aliases:['pizza salami','salami'],row:16,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:21.76,intOnly:true},
+  {name:'Pizza Schinken',aliases:['pizza schinken','schinken pizza'],row:17,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:21.76,intOnly:true},
+  {name:'Pizza BBQ',aliases:['pizza bbq','bbq'],row:18,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:31.25,intOnly:true},
+  {name:'Pizza Speziale',aliases:['speziale','pizza speziale'],row:19,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:25.25,intOnly:true},
+  {name:'Pizza Thunfisch',aliases:['thunfisch','pizza thunfisch','tonno'],row:20,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:23.42,intOnly:true},
+  {name:'Pizza Grillgemüse',aliases:['grillgemüse','gemüse pizza','verdure'],row:21,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:18.60,intOnly:true},
+  {name:'Eierkuchen',aliases:['eierkuchen','pfannkuchen'],row:22,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:20.39,intOnly:false},
+  {name:'Muffin Schoko',aliases:['muffin schoko','schoko muffin','schokomuffin'],row:23,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:26.85,intOnly:false},
+  {name:'Muffin Milka',aliases:['muffin milka','milka muffin'],row:24,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.49,intOnly:false},
+  {name:'Muffin Oreo',aliases:['muffin oreo','oreo muffin'],row:25,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.99,intOnly:false},
+  {name:'Muffin Blaubeere',aliases:['muffin blaubeere','blaubeere muffin'],row:26,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:40.05,intOnly:false},
+  {name:'Landkuchen Käse-Aprikose',aliases:['käse aprikose','aprikose'],row:27,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
+  {name:'Landkuchen Rhabarber',aliases:['rhabarber'],row:28,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
+  {name:'Landkuchen Apfel',aliases:['apfelkuchen','apfel kuchen','apfel'],row:29,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
+  {name:'Landkuchen Blaubeere',aliases:['blaubeere kuchen','blaubeerkuchen'],row:30,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
+  {name:'Landkuchen Pflaume',aliases:['pflaume','pflaumen'],row:31,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
+  {name:'Landkuchen Kirsch',aliases:['kirsch','kirschen'],row:32,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:32.90,intOnly:false,lkuchen:true},
+  {name:'Landkuchen Mohn',aliases:['mohn'],row:33,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:32.90,intOnly:false,lkuchen:true},
+  {name:'TK Suppengemüse',aliases:['suppengemüse','suppe gemüse'],row:34,cat:'TK',sup:'rauchhaupt',unit:'BTL',price:4.19,intOnly:true},
+  {name:'Chik\'n Burger',aliases:['chikn','chicken burger','chick'],row:35,cat:'TK',sup:'rauchhaupt',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'TK Hamburger',aliases:['hamburger','burger'],row:36,cat:'TK',sup:'rauchhaupt',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Mac\'n\'Cheese Burger',aliases:['mac','cheese burger'],row:37,cat:'TK',sup:'rauchhaupt',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Ketchup portioniert',aliases:['ketchup','tomatenketchup'],row:40,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:11.33,intOnly:true},
+  {name:'Mayo portioniert',aliases:['mayo','mayonnaise'],row:41,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:15.93,intOnly:true},
+  {name:'Curryketchup',aliases:['curryketchup','curry ketchup'],row:42,cat:'Vorräte',sup:'rauchhaupt',unit:'EIM',price:16.39,intOnly:false},
+  {name:'Kondensmilch',aliases:['kondensmilch','kondens'],row:43,cat:'Vorräte',sup:'rauchhaupt',unit:'TET',price:2.09,intOnly:true},
+  {name:'Pommessalz',aliases:['pommessalz','salz','würzsalz'],row:44,cat:'Vorräte',sup:'rauchhaupt',unit:'PCK',price:7.59,intOnly:true},
+  {name:'Nui Australien',aliases:['nui','australien'],row:47,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:32.67,intOnly:true},
+  {name:'Biscoff',aliases:['biscoff'],row:48,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:0,intOnly:true},
+  {name:'Oreo Sandwich',aliases:['oreo sandwich'],row:49,cat:'Eis',sup:'rauchhaupt',unit:'KT1',price:37.87,intOnly:true},
+  {name:'Oreo Bites',aliases:['oreo bites','bites'],row:50,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:19.93,intOnly:true},
+  {name:'Milka Strawberry',aliases:['milka strawberry','strawberry','erdbeer milka'],row:51,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:32.67,intOnly:true},
+  {name:'Milka Chocolate',aliases:['milka chocolate','milka schokolade'],row:52,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:32.67,intOnly:true},
+  {name:'Mango Eis',aliases:['mango'],row:53,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:32.40,intOnly:true},
+  {name:'Kaktus for Friends',aliases:['kaktus'],row:54,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:19.93,intOnly:true},
+  {name:'Wassermelone Eis',aliases:['wassermelone'],row:55,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:32.32,intOnly:true},
+  {name:'Smarties Popup',aliases:['smarties'],row:56,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:24.42,intOnly:true},
+  {name:'Orangen',aliases:['orangen','orange'],row:60,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Zitronen',aliases:['zitronen','zitrone'],row:61,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Erdbeeren',aliases:['erdbeeren','erdbeere'],row:62,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Minze',aliases:['minze'],row:63,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Weißkraut',aliases:['weißkraut','kraut'],row:64,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Möhren',aliases:['möhren','karotten'],row:65,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Sellerie',aliases:['sellerie'],row:66,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Porree',aliases:['porree','lauch'],row:67,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Zwiebeln',aliases:['zwiebeln','zwiebel'],row:68,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Milch 3,5%',aliases:['milch'],row:70,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Quark 500g',aliases:['quark'],row:71,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Kartoffelpuffer',aliases:['kartoffelpuffer','puffer'],row:72,cat:'Frische',sup:'eigen',unit:'KTN',price:0,intOnly:true},
+  {name:'Apfelmus',aliases:['apfelmus'],row:73,cat:'Frische',sup:'eigen',unit:'Glas',price:0,intOnly:true,bedarfs:true},
+  {name:'Süß-Sauersauce',aliases:['süß sauer','süßsauer'],row:75,cat:'Mios',sup:'mios',unit:'KTN',price:0,intOnly:true},
+  {name:'Schokolmilch',aliases:['schokolmilch','schoko milch'],row:76,cat:'Mios',sup:'mios',unit:'KTN',price:0,intOnly:true},
+  {name:'Schwarzbier',aliases:['schwarzbier'],row:77,cat:'Mios',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Clausthaler alkoholfrei',aliases:['clausthaler','alkoholfrei'],row:78,cat:'Mios',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Pommesspießer',aliases:['pommesspießer','spießer'],row:79,cat:'Mios',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
 ];
 
-const CATS = ['Alle', ...new Set(ARTICLES.map(a=>a.cat))];
-let season=null, currentStep=1, activeFilter='Alle';
-let bestandValues={}, accessToken=null;
-let recognition=null, isListening=false, pendingMic=null;
-let clientEmail='', privateKey='';
-let orderData = {};
+const LANDKUCHEN_SOLL_REG=3, LANDKUCHEN_SOLL_FER=5;
+const CATS=['Alle',...new Set(ARTICLES.map(a=>a.cat))];
+let season=null,currentStep=1,activeFilter='Alle';
+let bestandValues={},accessToken=null;
+let recognition=null,isListening=false,pendingMic=null;
+let clientEmail='',privateKey='',orderData={};
 
-// ---- SETUP ----
 function loadSetup(){
-  try{ clientEmail=localStorage.getItem('sa_email')||''; privateKey=localStorage.getItem('sa_key')||''; }catch(e){}
-  if(clientEmail&&privateKey){ document.getElementById('setupScreen').style.display='none'; document.getElementById('mainApp').style.display='block'; initApp(); }
+  try{clientEmail=localStorage.getItem('sa_email')||'';privateKey=localStorage.getItem('sa_key')||'';}catch(e){}
+  if(clientEmail&&privateKey){document.getElementById('setupScreen').style.display='none';document.getElementById('mainApp').style.display='block';initApp();}
 }
 function saveSetup(){
   const e=document.getElementById('setupEmail').value.trim();
   const k=document.getElementById('setupKey').value.trim();
-  if(!e||!k){ document.getElementById('setupError').classList.add('show'); return; }
-  try{ localStorage.setItem('sa_email',e); localStorage.setItem('sa_key',k); }catch(err){}
-  clientEmail=e; privateKey=k;
+  if(!e||!k){document.getElementById('setupError').classList.add('show');return;}
+  try{localStorage.setItem('sa_email',e);localStorage.setItem('sa_key',k);}catch(err){}
+  clientEmail=e;privateKey=k;
   document.getElementById('setupScreen').style.display='none';
   document.getElementById('mainApp').style.display='block';
   initApp();
 }
 function resetSetup(){
-  try{ localStorage.removeItem('sa_email'); localStorage.removeItem('sa_key'); }catch(e){}
-  clientEmail=''; privateKey='';
+  try{localStorage.removeItem('sa_email');localStorage.removeItem('sa_key');}catch(e){}
+  clientEmail='';privateKey='';
   document.getElementById('setupScreen').style.display='flex';
   document.getElementById('mainApp').style.display='none';
 }
 function initApp(){
-  const today=new Date(), tomorrow=new Date(today);
+  const today=new Date(),tomorrow=new Date(today);
   tomorrow.setDate(tomorrow.getDate()+1);
   const fmt=d=>d.toISOString().split('T')[0];
   document.getElementById('dateInventory').value=fmt(today);
   document.getElementById('dateOrder').value=fmt(tomorrow);
-  renderFilterBar(); renderArticleList();
+  renderFilterBar();renderArticleList();
   navigator.mediaDevices&&navigator.mediaDevices.getUserMedia({audio:true}).then(s=>s.getTracks().forEach(t=>t.stop())).catch(()=>{});
 }
 
-// ---- SEASON/STEPS ----
 function setSeason(s){
   season=s;
   document.getElementById('btnReg').className='season-btn'+(s==='regulaer'?' reg':' inactive');
@@ -364,38 +330,53 @@ function setSeason(s){
   document.getElementById('btnStep1Next').disabled=false;
   const label=s==='regulaer'?'☀️ Regulärbetrieb – Bestand → Spalte G':'🏖️ Ferienbetrieb – Bestand → Spalte I';
   const cls=s==='regulaer'?'reg':'fer';
-  ['step2Indicator','step3Indicator'].forEach(id=>{ const el=document.getElementById(id); if(el){el.textContent=label;el.className='season-indicator '+cls;} });
+  ['step2Indicator','step3Indicator'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=label;el.className='season-indicator '+cls;}});
 }
-function getBestandCol(){ return season==='regulaer'?'G':'I'; }
-function getOrderCol(){ return season==='regulaer'?'H':'J'; }
+function getBestandCol(){return season==='regulaer'?'G':'I';}
+function getOrderCol(){return season==='regulaer'?'H':'J';}
+function getLKSoll(){return season==='regulaer'?LANDKUCHEN_SOLL_REG:LANDKUCHEN_SOLL_FER;}
 
 function goStep(n){
+  if(n>currentStep+1&&n!==1) return; // can only go back or to next
   currentStep=n;
   document.querySelectorAll('.step-panel').forEach((p,i)=>p.classList.toggle('active',i+1===n));
-  ['ps1','ps2','ps3','ps4'].forEach((id,i)=>{ const el=document.getElementById(id); el.classList.remove('active','done'); if(i+1===n)el.classList.add('active'); else if(i+1<n)el.classList.add('done'); });
-  if(n===3) updateCompleteness();
-  if(n===4) loadOrderData();
+  ['ps1','ps2','ps3','ps4'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1===n)el.classList.add('active');
+    else if(i+1<n)el.classList.add('done');
+  });
+  if(n===3)updateCompleteness();
+  if(n===4)loadOrderData();
 }
 function confirmDates(){
-  if(!document.getElementById('dateInventory').value||!document.getElementById('dateOrder').value){ alert('Bitte beide Daten eintragen.'); return; }
+  if(!document.getElementById('dateInventory').value||!document.getElementById('dateOrder').value){alert('Bitte beide Daten eintragen.');return;}
   goStep(3);
 }
 
-// ---- ARTICLE LIST ----
 function renderFilterBar(){
   document.getElementById('filterBar3').innerHTML=CATS.map(c=>`<button class="filter-chip${c===activeFilter?' active':''}" onclick="setFilter('${c}')">${c}</button>`).join('');
 }
-function setFilter(c){ activeFilter=c; renderFilterBar(); renderArticleList(); }
+function setFilter(c){activeFilter=c;renderFilterBar();renderArticleList();}
+
 function renderArticleList(){
   const filtered=activeFilter==='Alle'?ARTICLES:ARTICLES.filter(a=>a.cat===activeFilter);
   document.getElementById('articleList3').innerHTML=filtered.map(a=>{
-    const val=bestandValues[a.row]; const filled=val!==undefined;
-    if(a.bedarfs) return `<div class="article-row${filled?' filled':''}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)}</div></div><span class="bedarf-tag">Bedarf prüfen</span><span class="check-icon">✅</span></div>`;
-    return `<div class="article-row${filled?' filled':''}" id="arow-${a.row}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${a.unit}</div></div><input type="number" class="bestand-input" id="inp-${a.row}" placeholder="Bestand" step="0.25" min="0" value="${val!==undefined?val:''}" oninput="handleInput(${a.row},this.value)" onblur="saveRow(${a.row})" /><span class="check-icon">✅</span></div>`;
+    const val=bestandValues[a.row];const filled=val!==undefined;
+    if(a.bedarfs)return`<div class="article-row${filled?' filled':''}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)}</div></div><span class="bedarf-tag">Bedarf prüfen</span><span class="check-icon">✅</span></div>`;
+    const step=a.intOnly?'1':'0.25';
+    return`<div class="article-row${filled?' filled':''}" id="arow-${a.row}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${a.unit}</div></div><input type="number" class="bestand-input" id="inp-${a.row}" placeholder="Bestand" step="${step}" min="0" value="${val!==undefined?val:''}" oninput="handleInput(${a.row},this.value,${a.intOnly})" onblur="saveRow(${a.row})" /><span class="check-icon">✅</span></div>`;
   }).join('');
 }
-function supLabel(s){ return s==='rauchhaupt'?'Rauchhaupt':s==='mios'?'Mios':'Eigeneinkauf'; }
-function handleInput(row,val){ bestandValues[row]=val===''?undefined:parseFloat(val); const el=document.getElementById(`arow-${row}`); if(el)el.classList.toggle('filled',val!==''); updateCompleteness(); }
+function supLabel(s){return s==='rauchhaupt'?'Rauchhaupt':s==='mios'?'Mios':'Eigeneinkauf';}
+
+function handleInput(row,val,intOnly){
+  let v=val===''?undefined:parseFloat(val);
+  if(v!==undefined&&intOnly)v=Math.round(v);
+  bestandValues[row]=v;
+  const el=document.getElementById(`arow-${row}`);if(el)el.classList.toggle('filled',v!==undefined);
+  updateCompleteness();
+}
 function updateCompleteness(){
   const trackable=ARTICLES.filter(a=>!a.bedarfs);
   const filled=trackable.filter(a=>bestandValues[a.row]!==undefined).length;
@@ -404,106 +385,178 @@ function updateCompleteness(){
   document.getElementById('completenessText').textContent=`${filled} von ${trackable.length} Artikel erfasst (${pct}%)`;
 }
 async function saveRow(row){
-  const val=bestandValues[row]; if(val===undefined)return;
-  try{ await writeToSheet(row,val,getBestandCol()); setStatus3('✓ Gespeichert','success'); }
-  catch(e){ setStatus3('Fehler: '+e.message,'error'); }
+  const val=bestandValues[row];if(val===undefined)return;
+  try{await writeToSheet(row,val,getBestandCol());setStatus3('✓ Gespeichert','success');}
+  catch(e){setStatus3('Fehler: '+e.message,'error');}
 }
-function setStatus3(msg,type){ const el=document.getElementById('status3'); el.className='status-bar '+type; el.textContent=msg; if(type==='success')setTimeout(()=>{ el.className='status-bar idle'; el.textContent='Bereit'; },3000); }
+function setStatus3(msg,type){
+  const el=document.getElementById('status3');el.className='status-bar '+type;el.textContent=msg;
+  if(type==='success')setTimeout(()=>{el.className='status-bar idle';el.textContent='Bereit';},3000);
+}
 function checkAndProceed(){
   const missing=ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]===undefined);
   const wb=document.getElementById('warningBox');
-  if(missing.length>0){ wb.className='warning-box show'; wb.innerHTML=`⚠️ ${missing.length} Artikel noch nicht erfasst:<div class="missing-list">${missing.map(a=>a.name).join(' · ')}</div>`; if(!confirm(`${missing.length} Artikel fehlen noch. Trotzdem weiter?`))return; }
-  else wb.className='warning-box';
+  if(missing.length>0){
+    wb.className='warning-box show';
+    wb.innerHTML=`⚠️ ${missing.length} Artikel noch nicht erfasst – leere Felder werden als Bestand 0 gewertet:<div style="margin-top:6px;line-height:1.8;">${missing.map(a=>a.name).join(' · ')}</div>`;
+  } else {wb.className='warning-box';}
+  // Set missing to 0
+  ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]===undefined).forEach(a=>{bestandValues[a.row]=0;});
   goStep(4);
 }
 
-// ---- LOAD ORDER DATA FROM SHEETS ----
+// ---- LANDKUCHEN LOGIC ----
+function calcLandkuchen(){
+  const lk=ARTICLES.filter(a=>a.lkuchen);
+  const total=lk.reduce((s,a)=>s+(bestandValues[a.row]||0),0);
+  const soll=getLKSoll();
+  const diff=Math.max(0,Math.ceil(soll-total));
+  // Sort by lowest bestand → suggest those first
+  const sorted=[...lk].sort((a,b)=>(bestandValues[a.row]||0)-(bestandValues[b.row]||0));
+  const suggestions=[];
+  let remaining=diff;
+  for(const a of sorted){
+    if(remaining<=0)break;
+    suggestions.push({article:a,qty:1});
+    remaining--;
+  }
+  return{total,soll,diff,suggestions};
+}
+
+// ---- LOAD ORDER DATA ----
 async function loadOrderData(){
   document.getElementById('summaryLoading').style.display='block';
   document.getElementById('summaryContent').style.display='none';
   document.getElementById('summaryBtns').style.display='none';
-  try {
-    const col = getOrderCol();
-    // Read entire order column H or J (rows 1-80)
-    const range = `${SHEET_NAME}!${col}1:${col}80`;
-    if(!accessToken) accessToken = await getAccessToken();
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
-    const r = await fetch(url, {headers:{'Authorization':`Bearer ${accessToken}`}});
-    if(!r.ok){ accessToken=null; throw new Error(`Sheets ${r.status}`); }
-    const data = await r.json();
-    const values = data.values || [];
-    orderData = {};
-    // values[0] = row 1, values[4] = row 5, etc.
-    values.forEach((row, idx) => {
-      const rowNum = idx + 1;
-      if(row && row[0] !== undefined && row[0] !== '') {
-        const v = row[0];
-        orderData[rowNum] = v;
-      }
+  try{
+    const col=getOrderCol();
+    const range=`${SHEET_NAME}!${col}1:${col}80`;
+    if(!accessToken)accessToken=await getAccessToken();
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
+    const r=await fetch(url,{headers:{'Authorization':`Bearer ${accessToken}`}});
+    if(!r.ok){accessToken=null;throw new Error(`Sheets ${r.status}`);}
+    const data=await r.json();
+    const values=data.values||[];
+    orderData={};
+    values.forEach((row,idx)=>{
+      const rowNum=idx+1;
+      if(row&&row[0]!==undefined&&row[0]!=='')orderData[rowNum]=row[0];
     });
     renderSummary();
     document.getElementById('summaryLoading').style.display='none';
     document.getElementById('summaryContent').style.display='block';
     document.getElementById('summaryBtns').style.display='flex';
-  } catch(e) {
-    document.getElementById('summaryLoading').textContent = '❌ Fehler beim Laden: ' + e.message;
+  }catch(e){
+    document.getElementById('summaryLoading').textContent='❌ Fehler beim Laden: '+e.message;
   }
+}
+
+function getOrderVal(row){
+  const v=orderData[row];
+  if(v===undefined||v===''||v==='Bedarf prüfen')return 0;
+  const n=parseFloat(v);
+  return isNaN(n)?0:n;
 }
 
 function renderSummary(){
   const di=document.getElementById('dateInventory').value;
   const do_=document.getElementById('dateOrder').value;
   const sl=season==='regulaer'?'Regulärbetrieb ☀️':'Ferienbetrieb 🏖️';
-  const infoRow=`<div style="font-size:13px;color:#666;margin-bottom:1rem;">📅 Aufnahme: <b>${di}</b> · Bestellung für: <b>${do_}</b> · ${sl}</div>`;
+  const lk=calcLandkuchen();
 
-  // Rauchhaupt
-  const rhArticles = ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs);
-  const rhRows = rhArticles.map(a => {
-    const orderVal = orderData[a.row];
-    const bestand = bestandValues[a.row];
-    const bestellMenge = orderVal !== undefined ? orderVal : (bestand !== undefined ? '–' : '–');
-    const isZero = orderVal === '0' || orderVal === 0;
-    return `<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${bestand !== undefined ? bestand : '–'} ${a.unit}</td><td class="${isZero?'zero':''}">${isZero?'–':bestellMenge} ${!isZero&&orderVal?a.unit:''}</td></tr>`;
-  });
-  document.getElementById('rhContent').innerHTML = infoRow + `<table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${rhRows.join('')}</tbody></table>`;
+  // Calculate total order value
+  let rhTotal=0;
+  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen);
+  const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
+  rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
+  lk.suggestions.forEach(s=>{rhTotal+=s.qty*s.article.price;});
 
-  // Mios
-  const miosArticles = ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
-  if(miosArticles.length){
-    const miosRows = miosArticles.map(a=>{
-      const orderVal=orderData[a.row]; const bestand=bestandValues[a.row];
-      const isZero=orderVal==='0'||orderVal===0;
-      return `<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${bestand!==undefined?bestand:'–'} ${a.unit}</td><td class="${isZero?'zero':''}">${isZero?'–':orderVal||'–'} ${!isZero&&orderVal?a.unit:''}</td></tr>`;
-    });
-    document.getElementById('miosContent').innerHTML=`<table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${miosRows.join('')}</tbody></table>`;
-    document.getElementById('summaryMios').style.display='block';
+  const infoHtml=`<div style="font-size:13px;color:#666;margin-bottom:1rem;">📅 Aufnahme: <b>${di}</b> · Bestellung für: <b>${do_}</b> · ${sl}</div>`;
+
+  // Rauchhaupt table
+  const rhRows=rhArticles.map(a=>{
+    const v=getOrderVal(a.row);
+    const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
+    if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
+    return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
+  }).join('');
+
+  // Landkuchen block
+  let lkHtml='';
+  if(lk.diff>0){
+    const sugg=lk.suggestions.map(s=>`${s.article.name} (1 KTN)`).join(', ');
+    lkHtml=`<div class="landkuchen-summary">🍰 <b>Landkuchen:</b> Bestand ${lk.total.toFixed(2)} von SOLL ${lk.soll} → <b>${lk.diff} Kuchen bestellen</b><br><span style="color:#555;font-size:12px;">Vorschlag: ${sugg}</span></div>`;
+    const lkRows=lk.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="color:#666;font-size:12px;">${(bestandValues[s.article.row]||0)} KTN</td><td class="order-amt">1 KTN</td></tr>`).join('');
+    lkHtml+=`<table class="summary-table" style="margin-bottom:1rem;"><tbody>${lkRows}</tbody></table>`;
+  } else {
+    lkHtml=`<div class="landkuchen-summary" style="background:#e6f4ea;border-color:#81c995;">🍰 <b>Landkuchen:</b> Bestand ${lk.total.toFixed(2)} – ausreichend ✅</div>`;
   }
 
-  // Eigeneinkauf
-  const eigenArticles = ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs);
-  const eigenRows = eigenArticles.map(a=>{
-    const orderVal=orderData[a.row]; const bestand=bestandValues[a.row];
-    const isZero=orderVal==='0'||orderVal===0;
-    return `<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${bestand!==undefined?bestand:'–'} ${a.unit}</td><td class="${isZero?'zero':''}">${isZero?'–':orderVal||'–'} ${!isZero&&orderVal?a.unit:''}</td></tr>`;
-  });
-  const bedarfsEigen = ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
-  document.getElementById('eigenContent').innerHTML=
-    (eigenRows.length?`<table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${eigenRows.join('')}</tbody></table>`:'') +
-    (bedarfsEigen.length?`<div style="margin-top:12px;font-size:13px;color:#666;padding:8px 4px;border-top:1px solid #f0f0f0;"><b>Bedarf manuell prüfen:</b><br>${bedarfsEigen.map(a=>a.name).join(' · ')}</div>`:'');
+  // Mios table
+  let miosHtml='';
+  if(miosArticles.length){
+    const miosRows=miosArticles.map(a=>{
+      const v=getOrderVal(a.row);
+      const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
+      if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
+      return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
+    }).join('');
+    miosHtml=`<div class="card"><div class="card-title">🏪 Mios Bestellung</div><table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${miosRows}</tbody></table></div>`;
+  }
+
+  // Eigen
+  const eigenArticles=ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs);
+  const bedarfsEigen=ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
+  const eigenRows=eigenArticles.map(a=>{
+    const v=getOrderVal(a.row);
+    const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
+    if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
+    return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
+  }).join('');
+
+  // Total & warning
+  const totalOk=rhTotal>=MIN_ORDER;
+  const totalHtml=`<div class="order-total ${totalOk?'ok':'warn'}">
+    ${totalOk?'✅':'⚠️'} Rauchhaupt Bestellwert: <b>${rhTotal.toFixed(2)} €</b>
+    ${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ für Freihauslieferung noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}
+  </div>`;
+
+  document.getElementById('summaryContent').innerHTML=`
+    <div class="card">
+      <div class="card-title">📦 Rauchhaupt Bestellung</div>
+      ${infoHtml}
+      <table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${rhRows}</tbody></table>
+      ${lkHtml}
+      ${totalHtml}
+    </div>
+    ${miosHtml}
+    <div class="card">
+      <div class="card-title">🛒 Eigeneinkauf (NP / Mios)</div>
+      ${eigenRows?`<table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${eigenRows}</tbody></table>`:''}
+      ${bedarfsEigen.length?`<div style="margin-top:12px;font-size:13px;color:#666;padding:8px 4px;border-top:1px solid #f0f0f0;"><b>Bedarf manuell prüfen:</b><br>${bedarfsEigen.map(a=>a.name).join(' · ')}</div>`:''}
+    </div>`;
 }
 
-// ---- PDF PRINT ----
+// ---- PDF ----
 function printRauchhaupt(){
   const di=document.getElementById('dateInventory').value;
   const do_=document.getElementById('dateOrder').value;
   const sl=season==='regulaer'?'Regulärbetrieb':'Ferienbetrieb';
-  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs);
+  const lk=calcLandkuchen();
+  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen);
   const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
-  let rows=rhArticles.filter(a=>orderData[a.row]&&orderData[a.row]!='0').map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${orderData[a.row]} ${a.unit}</td></tr>`).join('');
-  let mRows=miosArticles.filter(a=>orderData[a.row]&&orderData[a.row]!='0').map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${orderData[a.row]} ${a.unit}</td></tr>`).join('');
-  openPrintWindow(`📦 Rauchhaupt Bestellung`,di,do_,sl,
-    `<h3 style="margin:1rem 0 0.5rem;">Rauchhaupt</h3><table style="width:100%;border-collapse:collapse;">${rows||'<tr><td>Keine Bestellung nötig</td></tr>'}</table>`+
-    (mRows?`<h3 style="margin:1rem 0 0.5rem;">Mios</h3><table style="width:100%;border-collapse:collapse;">${mRows}</table>`:''));
+  let rows=rhArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td><td style="text-align:right;color:#666;">${(getOrderVal(a.row)*a.price).toFixed(2)}€</td></tr>`).join('');
+  let lkRows=lk.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`).join('');
+  let mRows=miosArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td><td></td></tr>`).join('');
+  let rhTotal=0;
+  rhArticles.filter(a=>getOrderVal(a.row)>0).forEach(a=>rhTotal+=getOrderVal(a.row)*a.price);
+  lk.suggestions.forEach(s=>rhTotal+=s.article.price);
+  const totalOk=rhTotal>=MIN_ORDER;
+  openPrintWindow('📦 Rauchhaupt Bestellung',di,do_,sl,
+    `<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="text-align:left;padding:4px;border-bottom:1px solid #ddd;">Artikel</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Menge</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Preis</th></tr></thead><tbody>${rows}${lkRows}</tbody></table>`+
+    (mRows?`<h3 style="margin:1rem 0 0.5rem;">Mios</h3><table style="width:100%;border-collapse:collapse;"><tbody>${mRows}</tbody></table>`:'')+
+    `<div style="margin-top:1rem;padding:10px;border-radius:8px;background:${totalOk?'#e6f4ea':'#fce8e6'};font-weight:700;">Bestellwert: ${rhTotal.toFixed(2)}€ ${totalOk?'✅ Freihauslieferung':'⚠️ Unter Mindestbestellwert (600€)'}</div>`
+  );
 }
 function printEigen(){
   const di=document.getElementById('dateInventory').value;
@@ -511,114 +564,74 @@ function printEigen(){
   const sl=season==='regulaer'?'Regulärbetrieb':'Ferienbetrieb';
   const eigenArticles=ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs);
   const bedarfsEigen=ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
-  let rows=eigenArticles.filter(a=>orderData[a.row]&&orderData[a.row]!='0').map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${orderData[a.row]} ${a.unit}</td></tr>`).join('');
+  let rows=eigenArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td></tr>`).join('');
   let bedarfsRows=bedarfsEigen.map(a=>`<tr><td>${a.name}</td><td style="text-align:right;color:#e65100;">prüfen</td></tr>`).join('');
-  openPrintWindow(`🛒 Eigeneinkauf`,di,do_,sl,
-    `<table style="width:100%;border-collapse:collapse;">${rows+bedarfsRows||'<tr><td>Keine Artikel</td></tr>'}</table>`);
+  openPrintWindow('🛒 Eigeneinkauf',di,do_,sl,
+    `<table style="width:100%;border-collapse:collapse;">${rows+bedarfsRows}</table>`);
 }
 function openPrintWindow(title,di,do_,sl,content){
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>
-    body{font-family:Arial,sans-serif;padding:2rem;max-width:600px;margin:0 auto;}
-    h1{font-size:20px;margin-bottom:4px;}
-    .meta{font-size:13px;color:#666;margin-bottom:1.5rem;}
-    table{width:100%;border-collapse:collapse;margin-bottom:1rem;}
-    td{padding:8px 4px;border-bottom:1px solid #eee;font-size:14px;}
-    h3{font-size:15px;color:#333;}
-    @media print{button{display:none;}}
-  </style></head><body>
-  <h1>${title}</h1>
-  <div class="meta">Aufnahme: ${di} · Bestellung für: ${do_} · ${sl}</div>
-  ${content}
-  <br><button onclick="window.print()" style="padding:10px 20px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">🖨️ Drucken / Als PDF speichern</button>
-  </body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:2rem;max-width:600px;margin:0 auto;}h1{font-size:20px;margin-bottom:4px;}.meta{font-size:13px;color:#666;margin-bottom:1.5rem;}table{width:100%;border-collapse:collapse;margin-bottom:1rem;}td,th{padding:8px 4px;border-bottom:1px solid #eee;font-size:14px;}h3{font-size:15px;color:#333;}@media print{button{display:none;}}</style></head><body><h1>${title}</h1><div class="meta">Aufnahme: ${di} · Bestellung für: ${do_} · ${sl}</div>${content}<br><button onclick="window.print()" style="padding:10px 20px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">🖨️ Drucken / Als PDF speichern</button></body></html>`);
   w.document.close();
 }
 
 // ---- MIC ----
 function toggleMic(){
-  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){ document.getElementById('micTranscript').textContent='Nur in Chrome verfügbar.'; return; }
-  if(isListening){ recognition.stop(); return; }
+  if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){document.getElementById('micTranscript').textContent='Nur in Chrome verfügbar.';return;}
+  if(isListening){recognition.stop();return;}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  recognition=new SR(); recognition.lang='de-DE'; recognition.continuous=false; recognition.interimResults=true;
-  recognition.onstart=()=>{ isListening=true; document.getElementById('micBtn').classList.add('listening'); document.getElementById('micBtn').textContent='⏹'; document.getElementById('micTranscript').textContent='Zuhören...'; document.getElementById('micResult').className='mic-result'; document.getElementById('micResult').textContent=''; document.getElementById('micSaveBtn').disabled=true; pendingMic=null; };
-  recognition.onresult=(e)=>{ let interim='',final=''; for(let i=e.resultIndex;i<e.results.length;i++){ if(e.results[i].isFinal)final+=e.results[i][0].transcript; else interim+=e.results[i][0].transcript; } document.getElementById('micTranscript').textContent=final||interim; if(final)parseMic(final.trim()); };
-  recognition.onerror=(ev)=>{ isListening=false; document.getElementById('micBtn').classList.remove('listening'); document.getElementById('micBtn').textContent='🎤'; };
-  recognition.onend=()=>{ isListening=false; document.getElementById('micBtn').classList.remove('listening'); document.getElementById('micBtn').textContent='🎤'; };
+  recognition=new SR();recognition.lang='de-DE';recognition.continuous=false;recognition.interimResults=true;
+  recognition.onstart=()=>{isListening=true;document.getElementById('micBtn').classList.add('listening');document.getElementById('micBtn').textContent='⏹';document.getElementById('micTranscript').textContent='Zuhören...';document.getElementById('micResult').className='mic-result';document.getElementById('micResult').textContent='';document.getElementById('micSaveBtn').disabled=true;pendingMic=null;};
+  recognition.onresult=(e)=>{let interim='',final='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}document.getElementById('micTranscript').textContent=final||interim;if(final)parseMic(final.trim());};
+  recognition.onerror=()=>{isListening=false;document.getElementById('micBtn').classList.remove('listening');document.getElementById('micBtn').textContent='🎤';};
+  recognition.onend=()=>{isListening=false;document.getElementById('micBtn').classList.remove('listening');document.getElementById('micBtn').textContent='🎤';};
   recognition.start();
 }
-
-function fuzzyMatch(text, article) {
-  const lower = text.toLowerCase();
-  let score = 0;
-  // Check aliases first
-  for(const alias of article.aliases) {
-    if(lower.includes(alias.toLowerCase())) score += alias.length * 2;
-  }
-  // Check name words
-  const words = article.name.toLowerCase().split(/\s+/);
-  for(const w of words){ if(w.length>2&&lower.includes(w)) score+=w.length; }
+function fuzzyMatch(text,article){
+  const lower=text.toLowerCase();let score=0;
+  for(const alias of article.aliases){if(lower.includes(alias.toLowerCase()))score+=alias.length*2;}
+  const words=article.name.toLowerCase().split(/\s+/);
+  for(const w of words){if(w.length>2&&lower.includes(w))score+=w.length;}
   return score;
 }
-
 function parseMic(text){
   const lower=text.toLowerCase();
   const numMatch=lower.match(/(\d+[,.]?\d*)/);
-  if(!numMatch){ showMicResult('err',`Keine Zahl erkannt: „${text}"`); return; }
+  if(!numMatch){showMicResult('err',`Keine Zahl: „${text}"`);return;}
   const value=parseFloat(numMatch[1].replace(',','.'));
-
-  // Find top matches
-  let scored = ARTICLES.map(a=>({article:a, score:fuzzyMatch(text,a)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
-
-  if(scored.length===0){ showMicResult('err',`Artikel nicht erkannt: „${text}"`); return; }
-
-  const best = scored[0];
-  const secondBest = scored[1];
-
-  // If top match is clear winner (score 2x next), accept directly with confirmation
-  if(!secondBest || best.score >= secondBest.score*1.8) {
-    pendingMic={article:best.article, value};
-    showMicResult('warn', `Meintest du: ${best.article.name} = ${value} ${best.article.unit}?`);
+  let scored=ARTICLES.map(a=>({article:a,score:fuzzyMatch(text,a)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  if(scored.length===0){showMicResult('err',`Nicht erkannt: „${text}"`);return;}
+  const best=scored[0],secondBest=scored[1];
+  if(!secondBest||best.score>=secondBest.score*1.8){
+    pendingMic={article:best.article,value};
+    showMicResult('warn',`Meintest du: ${best.article.name} = ${value} ${best.article.unit}?`);
     document.getElementById('micSaveBtn').disabled=false;
   } else {
-    // Multiple candidates - show choice dialog
-    showChoiceDialog(scored.slice(0,3), value, text);
+    showChoiceDialog(scored.slice(0,3),value,text);
   }
 }
-
-function showMicResult(type,msg){ const el=document.getElementById('micResult'); el.className='mic-result '+type; el.textContent=msg; }
-
-function showChoiceDialog(candidates, value, originalText){
-  document.getElementById('confirmTitle').textContent=`Was hast du gemeint?`;
-  document.getElementById('confirmMsg').textContent=`Ich habe „${originalText}" gehört. Welchen Artikel meintest du?`;
-  document.getElementById('confirmOptions').innerHTML=candidates.map((c,i)=>
-    `<button class="confirm-option" onclick="selectCandidate(${i},${value})">${c.article.name} <span style="color:#1a73e8;font-weight:600;">(${value} ${c.article.unit})</span></button>`
-  ).join('');
+function showMicResult(type,msg){const el=document.getElementById('micResult');el.className='mic-result '+type;el.textContent=msg;}
+function showChoiceDialog(candidates,value,originalText){
+  document.getElementById('confirmTitle').textContent='Was hast du gemeint?';
+  document.getElementById('confirmMsg').textContent=`Ich habe „${originalText}" gehört.`;
+  document.getElementById('confirmOptions').innerHTML=candidates.map((c,i)=>`<button class="confirm-option" onclick="selectCandidate(${i},${value})">${c.article.name} <span style="color:#1a73e8;font-weight:600;">(${value} ${c.article.unit})</span></button>`).join('');
   window._candidates=candidates;
   document.getElementById('confirmDialog').classList.add('show');
 }
-
-function selectCandidate(idx, value){
-  const c=window._candidates[idx];
-  pendingMic={article:c.article, value};
-  closeConfirm();
-  showMicResult('ok',`${c.article.name} = ${value} ${c.article.unit} – OK speichern?`);
-  document.getElementById('micSaveBtn').disabled=false;
-}
-
-function closeConfirm(){ document.getElementById('confirmDialog').classList.remove('show'); }
-
+function selectCandidate(idx,value){const c=window._candidates[idx];pendingMic={article:c.article,value};closeConfirm();showMicResult('ok',`${c.article.name} = ${value} – OK speichern?`);document.getElementById('micSaveBtn').disabled=false;}
+function closeConfirm(){document.getElementById('confirmDialog').classList.remove('show');}
 function confirmMicEntry(){
-  if(!pendingMic) return;
-  const {article,value}=pendingMic;
-  bestandValues[article.row]=value;
-  const inp=document.getElementById(`inp-${article.row}`); if(inp)inp.value=value;
-  const rowEl=document.getElementById(`arow-${article.row}`); if(rowEl)rowEl.classList.add('filled');
+  if(!pendingMic)return;
+  const{article,value}=pendingMic;
+  let v=value;if(article.intOnly)v=Math.round(v);
+  bestandValues[article.row]=v;
+  const inp=document.getElementById(`inp-${article.row}`);if(inp)inp.value=v;
+  const rowEl=document.getElementById(`arow-${article.row}`);if(rowEl)rowEl.classList.add('filled');
   document.getElementById('micSaveBtn').disabled=true;
   document.getElementById('micTranscript').textContent='Tippe 🎤 und sprich z.B. „Kassler 2"';
   document.getElementById('micResult').textContent='';
-  pendingMic=null; updateCompleteness();
-  setStatus3(`✓ ${article.name} = ${value} ${article.unit} gespeichert`,'success');
+  pendingMic=null;updateCompleteness();
+  setStatus3(`✓ ${article.name} = ${v} ${article.unit} gespeichert`,'success');
   saveRow(article.row);
 }
 
@@ -636,15 +649,15 @@ async function getAccessToken(){
   const jwt=`${toSign}.${sigB64}`;
   const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`});
   const d=await r.json();
-  if(!d.access_token) throw new Error('Token-Fehler');
+  if(!d.access_token)throw new Error('Token-Fehler');
   return d.access_token;
 }
 async function writeToSheet(row,value,col){
-  if(!accessToken) accessToken=await getAccessToken();
+  if(!accessToken)accessToken=await getAccessToken();
   const range=`${SHEET_NAME}!${col}${row}`;
   const url=`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
   const r=await fetch(url,{method:'PUT',headers:{'Authorization':`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({values:[[value]]})});
-  if(!r.ok){ accessToken=null; throw new Error(`Sheets ${r.status}`); }
+  if(!r.ok){accessToken=null;throw new Error(`Sheets ${r.status}`);}
 }
 
 loadSetup();
