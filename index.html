@@ -98,7 +98,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bedarf-order-input:focus{outline:none;border-color:#1a73e8;}
 .bedarf-save-btn{padding:6px 10px;font-size:12px;font-weight:600;border:none;border-radius:7px;background:#1a73e8;color:#fff;cursor:pointer;}
 .bedarf-save-btn.saved{background:#1e7e34;}
-.landkuchen-summary{padding:12px 14px;border-radius:10px;background:#e8f0fe;border:1px solid #a8c7fa;font-size:13px;margin-bottom:1rem;}
+.group-summary{padding:12px 14px;border-radius:10px;background:#e8f0fe;border:1px solid #a8c7fa;font-size:13px;margin:0.75rem 0;}
+.group-summary.ok{background:#e6f4ea;border-color:#81c995;}
 .setup-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f4ef;z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem;}
 .setup-card{background:#fff;border-radius:16px;border:1px solid #e0e0e0;padding:2rem;max-width:480px;width:100%;}
 .setup-title{font-size:20px;font-weight:700;margin-bottom:0.5rem;}
@@ -118,7 +119,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="setup-screen" id="setupScreen">
   <div class="setup-card">
     <div class="setup-title">🔑 Einrichtung</div>
-    <div class="setup-sub">Gib deinen Google Cloud Service Account Schlüssel ein. Er wird sicher in deinem Browser gespeichert.</div>
+    <div class="setup-sub">Gib deinen Google Cloud Service Account Schlüssel ein. Er wird sicher im Browser gespeichert.</div>
     <label class="setup-label">Client Email</label>
     <input type="text" class="setup-input" id="setupEmail" placeholder="xyz@projekt.iam.gserviceaccount.com" />
     <label class="setup-label">Private Key</label>
@@ -163,9 +164,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div style="font-size:13px;color:#666;">Regulär → Spalte G/H · Ferien → Spalte I/J</div>
     </div>
-    <div class="btn-row">
-      <button class="btn-primary" onclick="goStep(2)" id="btnStep1Next" disabled>Weiter →</button>
-    </div>
+    <div class="btn-row"><button class="btn-primary" onclick="goStep(2)" id="btnStep1Next" disabled>Weiter →</button></div>
   </div>
 
   <div class="step-panel" id="step2">
@@ -208,7 +207,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <div class="step-panel" id="step4">
-    <div id="summaryLoading" class="loading-overlay">⏳ Bestellmengen werden aus Google Sheets geladen...</div>
+    <div id="summaryLoading" class="loading-overlay">⏳ Bestände werden gespeichert und Bestellmengen geladen...</div>
     <div id="summaryContent" style="display:none;"></div>
     <div class="btn-row no-print" id="summaryBtns" style="display:none;">
       <button class="btn-secondary" onclick="goStep(3)">← Zurück</button>
@@ -223,29 +222,29 @@ const SPREADSHEET_ID='1ibr7jaFuC1y7X4OmNrH4JI2Mc_bfuHC2qTtxqsZJk04';
 const SHEET_NAME='Tabellenblatt2';
 const MIN_ORDER=600;
 
-// sup: rauchhaupt/mios/eigen, bedarfs: no formula, intOnly: whole numbers only
-// price: per order unit, orderUnit: KTN/BTL/PCK etc.
-// lkuchen: true = part of Landkuchen group
+// Pizza articles: bestand in Stück, bestellung in KTN
+// muffin_schoko: special single logic
+// muffin_group: part of oreo/milka/blaubeere group
 const ARTICLES=[
   {name:'Bockwurst 100g',aliases:['bockwurst','wurst'],row:5,cat:'Kühlschrank',sup:'rauchhaupt',unit:'PCK',price:6.49,intOnly:true},
   {name:'Kassler Kamm',aliases:['kassler','kasseler','kamm'],row:6,cat:'Kühlschrank',sup:'rauchhaupt',unit:'KG',price:6.85,intOnly:true},
   {name:'Currywurst 180g',aliases:['currywurst','curry wurst'],row:8,cat:'Kühlschrank',sup:'rauchhaupt',unit:'PCK',price:11.99,intOnly:true},
-  {name:'Sprühsahne',aliases:['sprühsahne','sahne'],row:9,cat:'Kühlschrank',sup:'rauchhaupt',unit:'DS',price:10.05,intOnly:true,sprühsahne:true},
+  {name:'Sprühsahne',aliases:['sprühsahne','sahne'],row:9,cat:'Kühlschrank',sup:'rauchhaupt',unit:'DS',price:10.05,intOnly:true},
   {name:'Pommes Welle',aliases:['pommes','frites'],row:12,cat:'TK',sup:'rauchhaupt',unit:'BTL',price:3.99,intOnly:true},
   {name:'Chicken Nuggets',aliases:['nuggets','chicken','hühnchen'],row:13,cat:'TK',sup:'rauchhaupt',unit:'BTL',price:5.75,intOnly:true},
   {name:'Schnitzel 180g',aliases:['schnitzel'],row:14,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:44.51,intOnly:false},
-  {name:'Pizza Margherita',aliases:['margherita','pizza margherita'],row:15,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:20.06,intOnly:true},
-  {name:'Pizza Salami',aliases:['pizza salami','salami'],row:16,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:21.76,intOnly:true},
-  {name:'Pizza Schinken',aliases:['pizza schinken','schinken pizza'],row:17,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:21.76,intOnly:true},
-  {name:'Pizza BBQ',aliases:['pizza bbq','bbq'],row:18,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:31.25,intOnly:true},
-  {name:'Pizza Speziale',aliases:['speziale','pizza speziale'],row:19,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:25.25,intOnly:true},
-  {name:'Pizza Thunfisch',aliases:['thunfisch','pizza thunfisch','tonno'],row:20,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:23.42,intOnly:true},
-  {name:'Pizza Grillgemüse',aliases:['grillgemüse','gemüse pizza','verdure'],row:21,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:18.60,intOnly:true},
+  {name:'Pizza Margherita',aliases:['margherita','pizza margherita'],row:15,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:20.06,intOnly:true,pizza:true,bestandUnit:'Stück'},
+  {name:'Pizza Salami',aliases:['pizza salami','salami'],row:16,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:21.76,intOnly:true,pizza:true,bestandUnit:'Stück'},
+  {name:'Pizza Schinken',aliases:['pizza schinken','schinken pizza'],row:17,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:21.76,intOnly:true,pizza:true,bestandUnit:'Stück'},
+  {name:'Pizza BBQ',aliases:['pizza bbq','bbq'],row:18,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:31.25,intOnly:true,pizza:true,bestandUnit:'Stück'},
+  {name:'Pizza Speziale',aliases:['speziale','pizza speziale'],row:19,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:25.25,intOnly:true,pizza:true,bestandUnit:'Stück'},
+  {name:'Pizza Thunfisch',aliases:['thunfisch','pizza thunfisch','tonno'],row:20,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:23.42,intOnly:true,pizza:true,bestandUnit:'Stück'},
+  {name:'Pizza Grillgemüse',aliases:['grillgemüse','gemüse pizza','verdure'],row:21,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:18.60,intOnly:true,pizza:true,bestandUnit:'Stück'},
   {name:'Eierkuchen',aliases:['eierkuchen','pfannkuchen'],row:22,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:20.39,intOnly:false},
-  {name:'Muffin Schoko',aliases:['muffin schoko','schoko muffin','schokomuffin'],row:23,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:26.85,intOnly:false},
-  {name:'Muffin Milka',aliases:['muffin milka','milka muffin'],row:24,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.49,intOnly:false},
-  {name:'Muffin Oreo',aliases:['muffin oreo','oreo muffin'],row:25,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.99,intOnly:false},
-  {name:'Muffin Blaubeere',aliases:['muffin blaubeere','blaubeere muffin'],row:26,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:40.05,intOnly:false},
+  {name:'Muffin Schoko',aliases:['muffin schoko','schoko muffin','schokomuffin'],row:23,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:26.85,intOnly:false,muffin_schoko:true},
+  {name:'Muffin Milka',aliases:['muffin milka','milka muffin'],row:24,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.49,intOnly:false,muffin_group:true},
+  {name:'Muffin Oreo',aliases:['muffin oreo','oreo muffin'],row:25,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.99,intOnly:false,muffin_group:true},
+  {name:'Muffin Blaubeere',aliases:['muffin blaubeere','blaubeere muffin'],row:26,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:40.05,intOnly:false,muffin_group:true},
   {name:'Landkuchen Käse-Aprikose',aliases:['käse aprikose','aprikose'],row:27,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
   {name:'Landkuchen Rhabarber',aliases:['rhabarber'],row:28,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
   {name:'Landkuchen Apfel',aliases:['apfelkuchen','apfel kuchen','apfel'],row:29,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
@@ -254,9 +253,9 @@ const ARTICLES=[
   {name:'Landkuchen Kirsch',aliases:['kirsch','kirschen'],row:32,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:32.90,intOnly:false,lkuchen:true},
   {name:'Landkuchen Mohn',aliases:['mohn'],row:33,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:32.90,intOnly:false,lkuchen:true},
   {name:'TK Suppengemüse',aliases:['suppengemüse','suppe gemüse'],row:34,cat:'TK',sup:'rauchhaupt',unit:'BTL',price:4.19,intOnly:true},
-  {name:'Chik\'n Burger',aliases:['chikn','chicken burger','chick'],row:35,cat:'TK',sup:'rauchhaupt',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Chik\'n Burger',aliases:['chikn','chicken burger','chick'],row:35,cat:'TK',sup:'rauchhaupt',unit:'BTL',price:19.15,intOnly:true,bedarfs:true},
   {name:'TK Hamburger',aliases:['hamburger','burger'],row:36,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:94.15,intOnly:true,bedarfs:true},
-  {name:'Mac\'n\'Cheese Burger',aliases:['mac','cheese burger'],row:37,cat:'TK',sup:'rauchhaupt',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'Falafel-Patty',aliases:['falafel','patty','vegan burger','vegetarisch'],row:37,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:32.95,intOnly:true,bedarfs:true},
   {name:'Ketchup portioniert',aliases:['ketchup','tomatenketchup'],row:40,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:11.33,intOnly:true},
   {name:'Mayo portioniert',aliases:['mayo','mayonnaise'],row:41,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:15.93,intOnly:true},
   {name:'Curryketchup',aliases:['curryketchup','curry ketchup'],row:42,cat:'Vorräte',sup:'rauchhaupt',unit:'EIM',price:16.39,intOnly:false},
@@ -292,14 +291,18 @@ const ARTICLES=[
   {name:'Pommesspießer',aliases:['pommesspießer','spießer'],row:79,cat:'Mios',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
 ];
 
-const LANDKUCHEN_SOLL_REG=3, LANDKUCHEN_SOLL_FER=5;
-let bedarfOrderValues={}; // stores manual order quantities for bedarf articles
+// Special group constants
+const LK_SOLL={reg:3,fer:5};
+const MUFFIN_SCHOKO_SOLL={reg:7,fer:10}; // in Stück (32 per KTN)
+const MUFFIN_GROUP_SOLL={reg:10,fer:15}; // total Oreo+Milka+Blaubeere in TRY/KTN
+
 const CATS=['Alle',...new Set(ARTICLES.map(a=>a.cat))];
 let season=null,currentStep=1,activeFilter='Alle';
 let bestandValues={},accessToken=null;
 let recognition=null,isListening=false,pendingMic=null;
-let clientEmail='',privateKey='',orderData={};
+let clientEmail='',privateKey='',orderData={},bedarfOrderValues={};
 
+// ---- SETUP ----
 function loadSetup(){
   try{clientEmail=localStorage.getItem('sa_email')||'';privateKey=localStorage.getItem('sa_key')||'';}catch(e){}
   if(clientEmail&&privateKey){document.getElementById('setupScreen').style.display='none';document.getElementById('mainApp').style.display='block';initApp();}
@@ -330,6 +333,7 @@ function initApp(){
   navigator.mediaDevices&&navigator.mediaDevices.getUserMedia({audio:true}).then(s=>s.getTracks().forEach(t=>t.stop())).catch(()=>{});
 }
 
+// ---- SEASON/STEPS ----
 function setSeason(s){
   season=s;
   document.getElementById('btnReg').className='season-btn'+(s==='regulaer'?' reg':' inactive');
@@ -341,17 +345,15 @@ function setSeason(s){
 }
 function getBestandCol(){return season==='regulaer'?'G':'I';}
 function getOrderCol(){return season==='regulaer'?'H':'J';}
-function getLKSoll(){return season==='regulaer'?LANDKUCHEN_SOLL_REG:LANDKUCHEN_SOLL_FER;}
+function getSeason(key){return season==='regulaer'?key.reg:key.fer;}
 
 function goStep(n){
-  if(n>currentStep+1&&n!==1) return; // can only go back or to next
+  if(n>currentStep+1)return;
   currentStep=n;
   document.querySelectorAll('.step-panel').forEach((p,i)=>p.classList.toggle('active',i+1===n));
   ['ps1','ps2','ps3','ps4'].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    el.classList.remove('active','done');
-    if(i+1===n)el.classList.add('active');
-    else if(i+1<n)el.classList.add('done');
+    const el=document.getElementById(id);el.classList.remove('active','done');
+    if(i+1===n)el.classList.add('active');else if(i+1<n)el.classList.add('done');
   });
   if(n===3)updateCompleteness();
   if(n===4)loadOrderData();
@@ -361,22 +363,22 @@ function confirmDates(){
   goStep(3);
 }
 
+// ---- ARTICLE LIST ----
 function renderFilterBar(){
   document.getElementById('filterBar3').innerHTML=CATS.map(c=>`<button class="filter-chip${c===activeFilter?' active':''}" onclick="setFilter('${c}')">${c}</button>`).join('');
 }
 function setFilter(c){activeFilter=c;renderFilterBar();renderArticleList();}
-
 function renderArticleList(){
   const filtered=activeFilter==='Alle'?ARTICLES:ARTICLES.filter(a=>a.cat===activeFilter);
   document.getElementById('articleList3').innerHTML=filtered.map(a=>{
     const val=bestandValues[a.row];const filled=val!==undefined;
     if(a.bedarfs)return`<div class="article-row${filled?' filled':''}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)}</div></div><span class="bedarf-tag">Bedarf prüfen</span><span class="check-icon">✅</span></div>`;
     const step=a.intOnly?'1':'0.25';
-    return`<div class="article-row${filled?' filled':''}" id="arow-${a.row}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${a.unit}</div></div><input type="number" class="bestand-input" id="inp-${a.row}" placeholder="Bestand" step="${step}" min="0" value="${val!==undefined?val:''}" oninput="handleInput(${a.row},this.value,${a.intOnly})" onblur="saveRow(${a.row})" /><span class="check-icon">✅</span></div>`;
+    const dispUnit=a.bestandUnit||a.unit;
+    return`<div class="article-row${filled?' filled':''}" id="arow-${a.row}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${dispUnit}</div></div><input type="number" class="bestand-input" id="inp-${a.row}" placeholder="Bestand" step="${step}" min="0" value="${val!==undefined?val:''}" oninput="handleInput(${a.row},this.value,${a.intOnly})" onblur="saveRow(${a.row})" /><span class="check-icon">✅</span></div>`;
   }).join('');
 }
 function supLabel(s){return s==='rauchhaupt'?'Rauchhaupt':s==='mios'?'Mios':'Eigeneinkauf';}
-
 function handleInput(row,val,intOnly){
   let v=val===''?undefined:parseFloat(val);
   if(v!==undefined&&intOnly)v=Math.round(v);
@@ -400,49 +402,59 @@ function setStatus3(msg,type){
   const el=document.getElementById('status3');el.className='status-bar '+type;el.textContent=msg;
   if(type==='success')setTimeout(()=>{el.className='status-bar idle';el.textContent='Bereit';},3000);
 }
+
 async function checkAndProceed(){
-  const missing=ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]===undefined);
-  const wb=document.getElementById('warningBox');
-  if(missing.length>0){
-    wb.className='warning-box show';
-    wb.innerHTML=`⚠️ ${missing.length} Artikel nicht erfasst – werden als Bestand 0 gespeichert und voll bestellt.`;
-  } else {wb.className='warning-box';}
-  // Set missing to 0 and write ALL to sheets
+  // Set all missing to 0
   ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]===undefined).forEach(a=>{bestandValues[a.row]=0;});
-  setStatus3('Speichere alle Bestände in Google Sheets...','loading');
+  document.getElementById('warningBox').className='warning-box';
+  setStatus3('Speichere alle Bestände...','loading');
+  // Batch write ALL bestand values to sheets
   try{
     if(!accessToken)accessToken=await getAccessToken();
     const col=getBestandCol();
-    const data=ARTICLES.filter(a=>!a.bedarfs&&bestandValues[a.row]!==undefined).map(a=>({
-      range:`${SHEET_NAME}!${col}${a.row}`,values:[[bestandValues[a.row]]]
+    const data=ARTICLES.filter(a=>!a.bedarfs).map(a=>({
+      range:`${SHEET_NAME}!${col}${a.row}`,values:[[bestandValues[a.row]??0]]
     }));
     const url=`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`;
     const r=await fetch(url,{method:'POST',headers:{'Authorization':`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({valueInputOption:'USER_ENTERED',data})});
     if(!r.ok){accessToken=null;throw new Error(`Sheets ${r.status}`);}
-    setStatus3('✓ Alle Bestände gespeichert','success');
-    // Wait briefly for Sheets formulas to recalculate
-    await new Promise(res=>setTimeout(res,1500));
+    setStatus3('✓ Alle Bestände gespeichert – lade Bestellmengen...','success');
+    await new Promise(res=>setTimeout(res,3000)); // wait for Sheets formulas
   }catch(e){
-    setStatus3('Fehler beim Speichern: '+e.message,'error');
+    setStatus3('Fehler: '+e.message,'error');
+    await new Promise(res=>setTimeout(res,1000));
   }
   goStep(4);
 }
 
-// ---- LANDKUCHEN LOGIC ----
+// ---- SPECIAL GROUP CALCULATIONS ----
 function calcLandkuchen(){
   const lk=ARTICLES.filter(a=>a.lkuchen);
   const total=lk.reduce((s,a)=>s+(bestandValues[a.row]||0),0);
-  const soll=getLKSoll();
+  const soll=getSeason(LK_SOLL);
   const diff=Math.max(0,Math.ceil(soll-total));
-  // Sort by lowest bestand → suggest those first
   const sorted=[...lk].sort((a,b)=>(bestandValues[a.row]||0)-(bestandValues[b.row]||0));
-  const suggestions=[];
-  let remaining=diff;
-  for(const a of sorted){
-    if(remaining<=0)break;
-    suggestions.push({article:a,qty:1});
-    remaining--;
-  }
+  const suggestions=[];let remaining=diff;
+  for(const a of sorted){if(remaining<=0)break;suggestions.push({article:a,qty:1});remaining--;}
+  return{total,soll,diff,suggestions};
+}
+
+function calcMuffinSchoko(){
+  const a=ARTICLES.find(x=>x.muffin_schoko);
+  const bestand=bestandValues[a.row]||0;
+  const soll=getSeason(MUFFIN_SCHOKO_SOLL);
+  const order=bestand<=soll?1:0;
+  return{bestand,soll,order,article:a};
+}
+
+function calcMuffinGroup(){
+  const grp=ARTICLES.filter(a=>a.muffin_group);
+  const total=grp.reduce((s,a)=>s+(bestandValues[a.row]||0),0);
+  const soll=getSeason(MUFFIN_GROUP_SOLL);
+  const diff=Math.max(0,Math.ceil(soll-total));
+  const sorted=[...grp].sort((a,b)=>(bestandValues[a.row]||0)-(bestandValues[b.row]||0));
+  const suggestions=[];let remaining=diff;
+  for(const a of sorted){if(remaining<=0)break;suggestions.push({article:a,qty:1});remaining--;}
   return{total,soll,diff,suggestions};
 }
 
@@ -452,33 +464,27 @@ async function loadOrderData(){
   document.getElementById('summaryContent').style.display='none';
   document.getElementById('summaryBtns').style.display='none';
   try{
-    const col=getOrderCol();
-    const range=`${SHEET_NAME}!${col}1:${col}80`;
     if(!accessToken)accessToken=await getAccessToken();
+    const range=`${SHEET_NAME}!${getOrderCol()}1:${getOrderCol()}80`;
     const url=`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
     const r=await fetch(url,{headers:{'Authorization':`Bearer ${accessToken}`}});
     if(!r.ok){accessToken=null;throw new Error(`Sheets ${r.status}`);}
     const data=await r.json();
-    const values=data.values||[];
     orderData={};
-    values.forEach((row,idx)=>{
-      const rowNum=idx+1;
-      if(row&&row[0]!==undefined&&row[0]!=='')orderData[rowNum]=row[0];
-    });
+    (data.values||[]).forEach((row,idx)=>{if(row&&row[0]!==undefined&&row[0]!=='')orderData[idx+1]=row[0];});
     renderSummary();
     document.getElementById('summaryLoading').style.display='none';
     document.getElementById('summaryContent').style.display='block';
     document.getElementById('summaryBtns').style.display='flex';
   }catch(e){
-    document.getElementById('summaryLoading').textContent='❌ Fehler beim Laden: '+e.message;
+    document.getElementById('summaryLoading').textContent='❌ Fehler: '+e.message;
   }
 }
 
 function getOrderVal(row){
   const v=orderData[row];
   if(v===undefined||v===''||v==='Bedarf prüfen')return 0;
-  const n=parseFloat(v);
-  return isNaN(n)?0:n;
+  const n=parseFloat(v);return isNaN(n)?0:n;
 }
 
 function renderSummary(){
@@ -486,70 +492,65 @@ function renderSummary(){
   const do_=document.getElementById('dateOrder').value;
   const sl=season==='regulaer'?'Regulärbetrieb ☀️':'Ferienbetrieb 🏖️';
   const lk=calcLandkuchen();
-
-  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen);
-  const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
-  const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
+  const ms=calcMuffinSchoko();
+  const mg=calcMuffinGroup();
 
   const infoHtml=`<div style="font-size:13px;color:#666;margin-bottom:1rem;">📅 Aufnahme: <b>${di}</b> · Bestellung für: <b>${do_}</b> · ${sl}</div>`;
 
-  // Rauchhaupt table
+  // Regular Rauchhaupt articles (excluding special groups)
+  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen&&!a.muffin_schoko&&!a.muffin_group);
   const rhRows=rhArticles.map(a=>{
     const v=getOrderVal(a.row);
+    const dispUnit=a.bestandUnit||a.unit;
     const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
-    if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
-    return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
+    if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${dispUnit}</td><td class="order-zero">–</td></tr>`;
+    return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${dispUnit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
   }).join('');
+
+  // Muffin Schoko block
+  const msHtml=`<div class="group-summary${ms.order===0?' ok':''}">
+    🧁 <b>Muffin Schoko:</b> Bestand ${ms.bestand} Stück, SOLL ≤${ms.soll} → ${ms.order===1?'<b>1 KTN bestellen</b>':'ausreichend ✅'}
+  </div>${ms.order>0?`<table class="summary-table" style="margin-bottom:1rem;"><tbody><tr><td>Muffin Schoko</td><td style="color:#666;font-size:12px;">${ms.bestand} KTN</td><td class="order-amt">1 KTN</td></tr></tbody></table>`:''}`;
+
+  // Muffin Group block
+  let mgHtml='';
+  if(mg.diff>0){
+    const sugg=mg.suggestions.map(s=>`${s.article.name} (1)`).join(', ');
+    mgHtml=`<div class="group-summary">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Bestand ${mg.total} von SOLL ${mg.soll} → <b>${mg.diff} bestellen</b><br><span style="font-size:12px;color:#555;">Vorschlag: ${sugg}</span></div>
+    <table class="summary-table" style="margin-bottom:1rem;"><tbody>${mg.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="color:#666;font-size:12px;">${bestandValues[s.article.row]||0} ${s.article.unit}</td><td class="order-amt">1 ${s.article.unit}</td></tr>`).join('')}</tbody></table>`;
+  } else {
+    mgHtml=`<div class="group-summary ok">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Bestand ${mg.total} – ausreichend ✅</div>`;
+  }
 
   // Landkuchen block
   let lkHtml='';
   if(lk.diff>0){
     const sugg=lk.suggestions.map(s=>`${s.article.name} (1 KTN)`).join(', ');
-    lkHtml=`<div class="landkuchen-summary">🍰 <b>Landkuchen:</b> Bestand ${lk.total.toFixed(2)} von SOLL ${lk.soll} → <b>${lk.diff} Kuchen bestellen</b><br><span style="color:#555;font-size:12px;">Vorschlag: ${sugg}</span></div>`;
-    const lkRows=lk.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="color:#666;font-size:12px;">${(bestandValues[s.article.row]||0)} KTN</td><td class="order-amt">1 KTN</td></tr>`).join('');
-    lkHtml+=`<table class="summary-table" style="margin-bottom:1rem;"><tbody>${lkRows}</tbody></table>`;
+    lkHtml=`<div class="group-summary">🍰 <b>Landkuchen:</b> Bestand ${lk.total.toFixed(2)} von SOLL ${lk.soll} → <b>${lk.diff} Kuchen bestellen</b><br><span style="font-size:12px;color:#555;">Vorschlag: ${sugg}</span></div>
+    <table class="summary-table" style="margin-bottom:1rem;"><tbody>${lk.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="color:#666;font-size:12px;">${bestandValues[s.article.row]||0} KTN</td><td class="order-amt">1 KTN</td></tr>`).join('')}</tbody></table>`;
   } else {
-    lkHtml=`<div class="landkuchen-summary" style="background:#e6f4ea;border-color:#81c995;">🍰 <b>Landkuchen:</b> Bestand ${lk.total.toFixed(2)} – ausreichend ✅</div>`;
+    lkHtml=`<div class="group-summary ok">🍰 <b>Landkuchen:</b> Bestand ${lk.total.toFixed(2)} – ausreichend ✅</div>`;
   }
 
-  // Mios table
-  let miosHtml='';
-  if(miosArticles.length){
-    const miosRows=miosArticles.map(a=>{
-      const v=getOrderVal(a.row);
-      const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
-      if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
-      return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
-    }).join('');
-    miosHtml=`<div class="card"><div class="card-title">🏪 Mios Bestellung</div><table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${miosRows}</tbody></table></div>`;
-  }
-
-  // Eigen
-  const eigenArticles=ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs);
-  const bedarfsEigen=ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
-  const eigenRows=eigenArticles.map(a=>{
-    const v=getOrderVal(a.row);
-    const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
-    if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
-    return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
-  }).join('');
-
-  // Bedarf Rauchhaupt input fields
-  const bedarfsRHHtml=bedarfsRH.length?`<div style="margin-top:1rem;border-top:2px solid #e0e0e0;padding-top:1rem;">
+  // Bedarfs Rauchhaupt
+  const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
+  const bedarfsRHHtml=`<div style="margin-top:1rem;border-top:2px solid #e0e0e0;padding-top:1rem;">
     <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:0.5rem;">📝 Bedarfsartikel – Bestellmenge eintragen:</div>
     ${bedarfsRH.map(a=>`<div class="bedarf-input-row">
       <div><div style="font-size:13px;font-weight:500;">${a.name}</div><div style="font-size:11px;color:#999;">${a.unit}${a.price>0?' · '+a.price.toFixed(2)+'€':''}</div></div>
       <input type="number" class="bedarf-order-input" id="bedarf-${a.row}" placeholder="Menge" min="0" step="1"
         value="${bedarfOrderValues[a.row]||''}"
         oninput="bedarfOrderValues[${a.row}]=this.value?parseInt(this.value):0;updateOrderTotal();" />
-      <button class="bedarf-save-btn" id="bedarf-btn-${a.row}" onclick="saveBedarfRow(${a.row})">Speichern</button>
+      <button class="bedarf-save-btn" id="bedarf-btn-${a.row}" onclick="saveBedarfRow(${a.row},'rh')">Speichern</button>
     </div>`).join('')}
-  </div>`:'';
+  </div>`;
 
-  // Calculate total
+  // Total
   let rhTotal=0;
   rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
-  lk.suggestions.forEach(s=>{rhTotal+=s.qty*s.article.price;});
+  if(ms.order>0)rhTotal+=ms.article.price;
+  mg.suggestions.forEach(s=>{rhTotal+=s.article.price;});
+  lk.suggestions.forEach(s=>{rhTotal+=s.article.price;});
   bedarfsRH.forEach(a=>{const v=bedarfOrderValues[a.row]||0;if(v>0&&a.price>0)rhTotal+=v*a.price;});
 
   const totalOk=rhTotal>=MIN_ORDER;
@@ -558,24 +559,44 @@ function renderSummary(){
     ${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}
   </div>`;
 
-  // Eigeneinkauf bedarf input fields
-  const bedarfsEigenInputHtml=bedarfsEigen.length?`<div style="margin-top:1rem;border-top:2px solid #e0e0e0;padding-top:1rem;">
-    <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:0.5rem;">📝 Bedarfsartikel – Menge eintragen:</div>
+  // Mios
+  const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
+  let miosHtml='';
+  if(miosArticles.length){
+    const miosRows=miosArticles.map(a=>{
+      const v=getOrderVal(a.row);const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
+      if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
+      return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
+    }).join('');
+    miosHtml=`<div class="card"><div class="card-title">🏪 Mios Bestellung</div><table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${miosRows}</tbody></table></div>`;
+  }
+
+  // Eigeneinkauf
+  const eigenArticles=ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs);
+  const bedarfsEigen=ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
+  const eigenRows=eigenArticles.map(a=>{
+    const v=getOrderVal(a.row);const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
+    if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
+    return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
+  }).join('');
+
+  const bedarfsEigenHtml=`<div style="margin-top:1rem;border-top:2px solid #e0e0e0;padding-top:1rem;">
+    <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:0.5rem;">🛍️ Einkaufsliste – Menge eintragen:</div>
     ${bedarfsEigen.map(a=>`<div class="bedarf-input-row">
       <div><div style="font-size:13px;font-weight:500;">${a.name}</div><div style="font-size:11px;color:#999;">Eigeneinkauf</div></div>
       <input type="number" class="bedarf-order-input" id="bedarf-${a.row}" placeholder="Menge" min="0" step="1"
         value="${bedarfOrderValues[a.row]||''}"
         oninput="bedarfOrderValues[${a.row}]=this.value?parseInt(this.value):0;" />
-      <button class="bedarf-save-btn" id="bedarf-btn-${a.row}" onclick="saveBedarfRow(${a.row})">Speichern</button>
+      <button class="bedarf-save-btn" id="bedarf-btn-${a.row}" onclick="saveBedarfRow(${a.row},'eigen')">Speichern</button>
     </div>`).join('')}
-  </div>`:'';
+  </div>`;
 
   document.getElementById('summaryContent').innerHTML=`
     <div class="card">
       <div class="card-title">📦 Rauchhaupt Bestellung</div>
       ${infoHtml}
       <table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${rhRows}</tbody></table>
-      ${lkHtml}
+      ${msHtml}${mgHtml}${lkHtml}
       ${bedarfsRHHtml}
       ${totalHtml}
     </div>
@@ -583,8 +604,39 @@ function renderSummary(){
     <div class="card">
       <div class="card-title">🛒 Eigeneinkauf (NP / Mios)</div>
       ${eigenRows?`<table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${eigenRows}</tbody></table>`:''}
-      ${bedarfsEigenInputHtml}
+      ${bedarfsEigenHtml}
     </div>`;
+}
+
+async function saveBedarfRow(row,type){
+  const val=bedarfOrderValues[row]||0;
+  const btn=document.getElementById(`bedarf-btn-${row}`);
+  if(btn){btn.textContent='...';btn.disabled=true;}
+  try{
+    // Write directly to order column (not formula column)
+    await writeToSheet(row,val,getOrderCol());
+    if(btn){btn.textContent='✓';btn.classList.add('saved');setTimeout(()=>{btn.textContent='Speichern';btn.classList.remove('saved');btn.disabled=false;},2000);}
+  }catch(e){
+    if(btn){btn.textContent='Fehler';btn.disabled=false;setTimeout(()=>{btn.textContent='Speichern';},2000);}
+  }
+}
+
+function updateOrderTotal(){
+  const lk=calcLandkuchen();
+  const ms=calcMuffinSchoko();
+  const mg=calcMuffinGroup();
+  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen&&!a.muffin_schoko&&!a.muffin_group);
+  const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
+  let rhTotal=0;
+  rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
+  if(ms.order>0)rhTotal+=ms.article.price;
+  mg.suggestions.forEach(s=>{rhTotal+=s.article.price;});
+  lk.suggestions.forEach(s=>{rhTotal+=s.article.price;});
+  bedarfsRH.forEach(a=>{const v=bedarfOrderValues[a.row]||0;if(v>0&&a.price>0)rhTotal+=v*a.price;});
+  const el=document.getElementById('orderTotal');if(!el)return;
+  const totalOk=rhTotal>=MIN_ORDER;
+  el.className=`order-total ${totalOk?'ok':'warn'}`;
+  el.innerHTML=`${totalOk?'✅':'⚠️'} Rauchhaupt Bestellwert: <b>${rhTotal.toFixed(2)} €</b>${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}`;
 }
 
 // ---- PDF ----
@@ -592,24 +644,27 @@ function printRauchhaupt(){
   const di=document.getElementById('dateInventory').value;
   const do_=document.getElementById('dateOrder').value;
   const sl=season==='regulaer'?'Regulärbetrieb':'Ferienbetrieb';
-  const lk=calcLandkuchen();
-  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen);
+  const lk=calcLandkuchen();const ms=calcMuffinSchoko();const mg=calcMuffinGroup();
+  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen&&!a.muffin_schoko&&!a.muffin_group);
   const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
+  const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
   let rows=rhArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td><td style="text-align:right;color:#666;">${(getOrderVal(a.row)*a.price).toFixed(2)}€</td></tr>`).join('');
-  let lkRows=lk.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`).join('');
+  if(ms.order>0)rows+=`<tr><td>Muffin Schoko</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${ms.article.price.toFixed(2)}€</td></tr>`;
+  mg.suggestions.forEach(s=>{rows+=`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 ${s.article.unit}</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`;});
+  lk.suggestions.forEach(s=>{rows+=`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`;});
+  bedarfsRH.filter(a=>(bedarfOrderValues[a.row]||0)>0).forEach(a=>{rows+=`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${bedarfOrderValues[a.row]} ${a.unit}</td><td style="text-align:right;color:#666;">${a.price>0?(bedarfOrderValues[a.row]*a.price).toFixed(2)+'€':''}</td></tr>`;});
   let mRows=miosArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td><td></td></tr>`).join('');
-  let bedarfsRows=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs&&(bedarfOrderValues[a.row]||0)>0)
-    .map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${bedarfOrderValues[a.row]} ${a.unit}</td><td style="text-align:right;color:#666;">${a.price>0?(bedarfOrderValues[a.row]*a.price).toFixed(2)+'€':''}</td></tr>`).join('');
   let rhTotal=0;
   rhArticles.filter(a=>getOrderVal(a.row)>0).forEach(a=>rhTotal+=getOrderVal(a.row)*a.price);
+  if(ms.order>0)rhTotal+=ms.article.price;
+  mg.suggestions.forEach(s=>rhTotal+=s.article.price);
   lk.suggestions.forEach(s=>rhTotal+=s.article.price);
-  ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs).forEach(a=>{const v=bedarfOrderValues[a.row]||0;if(v>0&&a.price>0)rhTotal+=v*a.price;});
+  bedarfsRH.forEach(a=>{const v=bedarfOrderValues[a.row]||0;if(v>0&&a.price>0)rhTotal+=v*a.price;});
   const totalOk=rhTotal>=MIN_ORDER;
   openPrintWindow('📦 Rauchhaupt Bestellung',di,do_,sl,
-    `<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="text-align:left;padding:4px;border-bottom:1px solid #ddd;">Artikel</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Menge</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Preis</th></tr></thead><tbody>${rows}${lkRows}${bedarfsRows}</tbody></table>`+
+    `<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="text-align:left;padding:4px;border-bottom:1px solid #ddd;">Artikel</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Menge</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Preis</th></tr></thead><tbody>${rows}</tbody></table>`+
     (mRows?`<h3 style="margin:1rem 0 0.5rem;">Mios</h3><table style="width:100%;border-collapse:collapse;"><tbody>${mRows}</tbody></table>`:'')+
-    `<div style="margin-top:1rem;padding:10px;border-radius:8px;background:${totalOk?'#e6f4ea':'#fce8e6'};font-weight:700;">Bestellwert: ${rhTotal.toFixed(2)}€ ${totalOk?'✅ Freihauslieferung':'⚠️ Unter Mindestbestellwert (600€)'}</div>`
-  );
+    `<div style="margin-top:1rem;padding:10px;border-radius:8px;background:${totalOk?'#e6f4ea':'#fce8e6'};font-weight:700;">Bestellwert: ${rhTotal.toFixed(2)}€ ${totalOk?'✅ Freihauslieferung':'⚠️ Unter Mindestbestellwert (600€)'}</div>`);
 }
 function printEigen(){
   const di=document.getElementById('dateInventory').value;
@@ -618,47 +673,16 @@ function printEigen(){
   const eigenArticles=ARTICLES.filter(a=>a.sup==='eigen'&&!a.bedarfs);
   const bedarfsEigen=ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
   let rows=eigenArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td></tr>`).join('');
-  let bedarfsRows=bedarfsEigen.map(a=>{
-    const v=bedarfOrderValues[a.row]||0;
-    return`<tr><td>${a.name}</td><td style="text-align:right;${v>0?'font-weight:700;':'color:#e65100;'}">${v>0?v+' –':'prüfen'}</td></tr>`;
-  }).join('');
-  openPrintWindow('🛒 Eigeneinkauf',di,do_,sl,
-    `<table style="width:100%;border-collapse:collapse;">${rows+bedarfsRows}</table>`);
+  bedarfsEigen.forEach(a=>{const v=bedarfOrderValues[a.row]||0;rows+=`<tr><td>${a.name}</td><td style="text-align:right;${v>0?'font-weight:700;':'color:#e65100;'}">${v>0?v+' –':'prüfen'}</td></tr>`;});
+  openPrintWindow('🛒 Eigeneinkauf',di,do_,sl,`<table style="width:100%;border-collapse:collapse;">${rows}</table>`);
 }
 function openPrintWindow(title,di,do_,sl,content){
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:2rem;max-width:600px;margin:0 auto;}h1{font-size:20px;margin-bottom:4px;}.meta{font-size:13px;color:#666;margin-bottom:1.5rem;}table{width:100%;border-collapse:collapse;margin-bottom:1rem;}td,th{padding:8px 4px;border-bottom:1px solid #eee;font-size:14px;}h3{font-size:15px;color:#333;}@media print{button{display:none;}}</style></head><body><h1>${title}</h1><div class="meta">Aufnahme: ${di} · Bestellung für: ${do_} · ${sl}</div>${content}<br><button onclick="window.print()" style="padding:10px 20px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">🖨️ Drucken / Als PDF speichern</button></body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:2rem;max-width:600px;margin:0 auto;}h1{font-size:20px;margin-bottom:4px;}.meta{font-size:13px;color:#666;margin-bottom:1.5rem;}table{width:100%;border-collapse:collapse;margin-bottom:1rem;}td,th{padding:8px 4px;border-bottom:1px solid #eee;font-size:14px;}h3{font-size:15px;}@media print{button{display:none;}}</style></head><body><h1>${title}</h1><div class="meta">Aufnahme: ${di} · Bestellung für: ${do_} · ${sl}</div>${content}<br><button onclick="window.print()" style="padding:10px 20px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">🖨️ Drucken / Als PDF speichern</button></body></html>`);
   w.document.close();
 }
 
-async function saveBedarfRow(row){
-  const val=bedarfOrderValues[row]||0;
-  const btn=document.getElementById(`bedarf-btn-${row}`);
-  if(btn){btn.textContent='...';btn.disabled=true;}
-  try{
-    await writeToSheet(row,val,getOrderCol());
-    if(btn){btn.textContent='✓';btn.classList.add('saved');setTimeout(()=>{btn.textContent='Speichern';btn.classList.remove('saved');btn.disabled=false;},2000);}
-  }catch(e){
-    if(btn){btn.textContent='Fehler';btn.disabled=false;}
-  }
-}
-
-function updateOrderTotal(){
-  const lk=calcLandkuchen();
-  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen);
-  const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
-  let rhTotal=0;
-  rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
-  lk.suggestions.forEach(s=>{rhTotal+=s.qty*s.article.price;});
-  bedarfsRH.forEach(a=>{const v=bedarfOrderValues[a.row]||0;if(v>0&&a.price>0)rhTotal+=v*a.price;});
-  const el=document.getElementById('orderTotal');
-  if(!el)return;
-  const totalOk=rhTotal>=MIN_ORDER;
-  el.className=`order-total ${totalOk?'ok':'warn'}`;
-  el.innerHTML=`${totalOk?'✅':'⚠️'} Rauchhaupt Bestellwert: <b>${rhTotal.toFixed(2)} €</b>${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}`;
-}
-
-
+// ---- MIC ----
 function toggleMic(){
   if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){document.getElementById('micTranscript').textContent='Nur in Chrome verfügbar.';return;}
   if(isListening){recognition.stop();return;}
@@ -687,17 +711,15 @@ function parseMic(text){
   const best=scored[0],secondBest=scored[1];
   if(!secondBest||best.score>=secondBest.score*1.8){
     pendingMic={article:best.article,value};
-    showMicResult('warn',`Meintest du: ${best.article.name} = ${value} ${best.article.unit}?`);
+    showMicResult('warn',`Meintest du: ${best.article.name} = ${value}?`);
     document.getElementById('micSaveBtn').disabled=false;
-  } else {
-    showChoiceDialog(scored.slice(0,3),value,text);
-  }
+  }else{showChoiceDialog(scored.slice(0,3),value,text);}
 }
 function showMicResult(type,msg){const el=document.getElementById('micResult');el.className='mic-result '+type;el.textContent=msg;}
 function showChoiceDialog(candidates,value,originalText){
   document.getElementById('confirmTitle').textContent='Was hast du gemeint?';
   document.getElementById('confirmMsg').textContent=`Ich habe „${originalText}" gehört.`;
-  document.getElementById('confirmOptions').innerHTML=candidates.map((c,i)=>`<button class="confirm-option" onclick="selectCandidate(${i},${value})">${c.article.name} <span style="color:#1a73e8;font-weight:600;">(${value} ${c.article.unit})</span></button>`).join('');
+  document.getElementById('confirmOptions').innerHTML=candidates.map((c,i)=>`<button class="confirm-option" onclick="selectCandidate(${i},${value})">${c.article.name} (${value} ${c.article.bestandUnit||c.article.unit})</button>`).join('');
   window._candidates=candidates;
   document.getElementById('confirmDialog').classList.add('show');
 }
@@ -714,7 +736,7 @@ function confirmMicEntry(){
   document.getElementById('micTranscript').textContent='Tippe 🎤 und sprich z.B. „Kassler 2"';
   document.getElementById('micResult').textContent='';
   pendingMic=null;updateCompleteness();
-  setStatus3(`✓ ${article.name} = ${v} ${article.unit} gespeichert`,'success');
+  setStatus3(`✓ ${article.name} = ${v} gespeichert`,'success');
   saveRow(article.row);
 }
 
