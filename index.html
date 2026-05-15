@@ -92,6 +92,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .order-total{padding:12px 14px;border-radius:10px;font-size:15px;font-weight:700;margin-top:1rem;text-align:center;}
 .order-total.ok{background:#e6f4ea;color:#1e7e34;}
 .order-total.warn{background:#fce8e6;color:#c62828;}
+.bedarf-input-row{display:grid;grid-template-columns:1fr 90px 80px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid #f0f0f0;}
+.bedarf-input-row:last-child{border-bottom:none;}
+.bedarf-order-input{width:100%;padding:6px 8px;font-size:14px;text-align:center;border:1px solid #ddd;border-radius:7px;}
+.bedarf-order-input:focus{outline:none;border-color:#1a73e8;}
+.bedarf-save-btn{padding:6px 10px;font-size:12px;font-weight:600;border:none;border-radius:7px;background:#1a73e8;color:#fff;cursor:pointer;}
+.bedarf-save-btn.saved{background:#1e7e34;}
 .landkuchen-summary{padding:12px 14px;border-radius:10px;background:#e8f0fe;border:1px solid #a8c7fa;font-size:13px;margin-bottom:1rem;}
 .setup-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f4ef;z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem;}
 .setup-card{background:#fff;border-radius:16px;border:1px solid #e0e0e0;padding:2rem;max-width:480px;width:100%;}
@@ -249,7 +255,7 @@ const ARTICLES=[
   {name:'Landkuchen Mohn',aliases:['mohn'],row:33,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:32.90,intOnly:false,lkuchen:true},
   {name:'TK Suppengemüse',aliases:['suppengemüse','suppe gemüse'],row:34,cat:'TK',sup:'rauchhaupt',unit:'BTL',price:4.19,intOnly:true},
   {name:'Chik\'n Burger',aliases:['chikn','chicken burger','chick'],row:35,cat:'TK',sup:'rauchhaupt',unit:'–',price:0,intOnly:true,bedarfs:true},
-  {name:'TK Hamburger',aliases:['hamburger','burger'],row:36,cat:'TK',sup:'rauchhaupt',unit:'–',price:0,intOnly:true,bedarfs:true},
+  {name:'TK Hamburger',aliases:['hamburger','burger'],row:36,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:94.15,intOnly:true,bedarfs:true},
   {name:'Mac\'n\'Cheese Burger',aliases:['mac','cheese burger'],row:37,cat:'TK',sup:'rauchhaupt',unit:'–',price:0,intOnly:true,bedarfs:true},
   {name:'Ketchup portioniert',aliases:['ketchup','tomatenketchup'],row:40,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:11.33,intOnly:true},
   {name:'Mayo portioniert',aliases:['mayo','mayonnaise'],row:41,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:15.93,intOnly:true},
@@ -287,6 +293,7 @@ const ARTICLES=[
 ];
 
 const LANDKUCHEN_SOLL_REG=3, LANDKUCHEN_SOLL_FER=5;
+let bedarfOrderValues={}; // stores manual order quantities for bedarf articles
 const CATS=['Alle',...new Set(ARTICLES.map(a=>a.cat))];
 let season=null,currentStep=1,activeFilter='Alle';
 let bestandValues={},accessToken=null;
@@ -464,12 +471,9 @@ function renderSummary(){
   const sl=season==='regulaer'?'Regulärbetrieb ☀️':'Ferienbetrieb 🏖️';
   const lk=calcLandkuchen();
 
-  // Calculate total order value
-  let rhTotal=0;
   const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen);
   const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
-  rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
-  lk.suggestions.forEach(s=>{rhTotal+=s.qty*s.article.price;});
+  const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
 
   const infoHtml=`<div style="font-size:13px;color:#666;margin-bottom:1rem;">📅 Aufnahme: <b>${di}</b> · Bestellung für: <b>${do_}</b> · ${sl}</div>`;
 
@@ -514,11 +518,28 @@ function renderSummary(){
     return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
   }).join('');
 
-  // Total & warning
+  // Bedarf Rauchhaupt input fields
+  const bedarfsRHHtml=bedarfsRH.length?`<div style="margin-top:1rem;border-top:2px solid #e0e0e0;padding-top:1rem;">
+    <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:0.5rem;">📝 Bedarfsartikel – Bestellmenge eintragen:</div>
+    ${bedarfsRH.map(a=>`<div class="bedarf-input-row">
+      <div><div style="font-size:13px;font-weight:500;">${a.name}</div><div style="font-size:11px;color:#999;">${a.unit}${a.price>0?' · '+a.price.toFixed(2)+'€':''}</div></div>
+      <input type="number" class="bedarf-order-input" id="bedarf-${a.row}" placeholder="Menge" min="0" step="1"
+        value="${bedarfOrderValues[a.row]||''}"
+        oninput="bedarfOrderValues[${a.row}]=this.value?parseInt(this.value):0;updateOrderTotal();" />
+      <button class="bedarf-save-btn" id="bedarf-btn-${a.row}" onclick="saveBedarfRow(${a.row})">Speichern</button>
+    </div>`).join('')}
+  </div>`:'';
+
+  // Calculate total
+  let rhTotal=0;
+  rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
+  lk.suggestions.forEach(s=>{rhTotal+=s.qty*s.article.price;});
+  bedarfsRH.forEach(a=>{const v=bedarfOrderValues[a.row]||0;if(v>0&&a.price>0)rhTotal+=v*a.price;});
+
   const totalOk=rhTotal>=MIN_ORDER;
-  const totalHtml=`<div class="order-total ${totalOk?'ok':'warn'}">
+  const totalHtml=`<div class="order-total ${totalOk?'ok':'warn'}" id="orderTotal">
     ${totalOk?'✅':'⚠️'} Rauchhaupt Bestellwert: <b>${rhTotal.toFixed(2)} €</b>
-    ${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ für Freihauslieferung noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}
+    ${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}
   </div>`;
 
   document.getElementById('summaryContent').innerHTML=`
@@ -527,6 +548,7 @@ function renderSummary(){
       ${infoHtml}
       <table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${rhRows}</tbody></table>
       ${lkHtml}
+      ${bedarfsRHHtml}
       ${totalHtml}
     </div>
     ${miosHtml}
@@ -548,12 +570,15 @@ function printRauchhaupt(){
   let rows=rhArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td><td style="text-align:right;color:#666;">${(getOrderVal(a.row)*a.price).toFixed(2)}€</td></tr>`).join('');
   let lkRows=lk.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`).join('');
   let mRows=miosArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td><td></td></tr>`).join('');
+  let bedarfsRows=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs&&(bedarfOrderValues[a.row]||0)>0)
+    .map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${bedarfOrderValues[a.row]} ${a.unit}</td><td style="text-align:right;color:#666;">${a.price>0?(bedarfOrderValues[a.row]*a.price).toFixed(2)+'€':''}</td></tr>`).join('');
   let rhTotal=0;
   rhArticles.filter(a=>getOrderVal(a.row)>0).forEach(a=>rhTotal+=getOrderVal(a.row)*a.price);
   lk.suggestions.forEach(s=>rhTotal+=s.article.price);
+  ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs).forEach(a=>{const v=bedarfOrderValues[a.row]||0;if(v>0&&a.price>0)rhTotal+=v*a.price;});
   const totalOk=rhTotal>=MIN_ORDER;
   openPrintWindow('📦 Rauchhaupt Bestellung',di,do_,sl,
-    `<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="text-align:left;padding:4px;border-bottom:1px solid #ddd;">Artikel</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Menge</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Preis</th></tr></thead><tbody>${rows}${lkRows}</tbody></table>`+
+    `<table style="width:100%;border-collapse:collapse;"><thead><tr><th style="text-align:left;padding:4px;border-bottom:1px solid #ddd;">Artikel</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Menge</th><th style="text-align:right;padding:4px;border-bottom:1px solid #ddd;">Preis</th></tr></thead><tbody>${rows}${lkRows}${bedarfsRows}</tbody></table>`+
     (mRows?`<h3 style="margin:1rem 0 0.5rem;">Mios</h3><table style="width:100%;border-collapse:collapse;"><tbody>${mRows}</tbody></table>`:'')+
     `<div style="margin-top:1rem;padding:10px;border-radius:8px;background:${totalOk?'#e6f4ea':'#fce8e6'};font-weight:700;">Bestellwert: ${rhTotal.toFixed(2)}€ ${totalOk?'✅ Freihauslieferung':'⚠️ Unter Mindestbestellwert (600€)'}</div>`
   );
@@ -575,7 +600,34 @@ function openPrintWindow(title,di,do_,sl,content){
   w.document.close();
 }
 
-// ---- MIC ----
+async function saveBedarfRow(row){
+  const val=bedarfOrderValues[row]||0;
+  const btn=document.getElementById(`bedarf-btn-${row}`);
+  if(btn){btn.textContent='...';btn.disabled=true;}
+  try{
+    await writeToSheet(row,val,getOrderCol());
+    if(btn){btn.textContent='✓';btn.classList.add('saved');setTimeout(()=>{btn.textContent='Speichern';btn.classList.remove('saved');btn.disabled=false;},2000);}
+  }catch(e){
+    if(btn){btn.textContent='Fehler';btn.disabled=false;}
+  }
+}
+
+function updateOrderTotal(){
+  const lk=calcLandkuchen();
+  const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen);
+  const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
+  let rhTotal=0;
+  rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
+  lk.suggestions.forEach(s=>{rhTotal+=s.qty*s.article.price;});
+  bedarfsRH.forEach(a=>{const v=bedarfOrderValues[a.row]||0;if(v>0&&a.price>0)rhTotal+=v*a.price;});
+  const el=document.getElementById('orderTotal');
+  if(!el)return;
+  const totalOk=rhTotal>=MIN_ORDER;
+  el.className=`order-total ${totalOk?'ok':'warn'}`;
+  el.innerHTML=`${totalOk?'✅':'⚠️'} Rauchhaupt Bestellwert: <b>${rhTotal.toFixed(2)} €</b>${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}`;
+}
+
+
 function toggleMic(){
   if(!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)){document.getElementById('micTranscript').textContent='Nur in Chrome verfügbar.';return;}
   if(isListening){recognition.stop();return;}
