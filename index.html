@@ -241,7 +241,7 @@ const ARTICLES=[
   {name:'Pizza Thunfisch',aliases:['thunfisch','pizza thunfisch','tonno'],row:20,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:23.42,intOnly:true,pizza:true,bestandUnit:'Stück'},
   {name:'Pizza Grillgemüse',aliases:['grillgemüse','gemüse pizza','verdure'],row:21,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:18.60,intOnly:true,pizza:true,bestandUnit:'Stück'},
   {name:'Eierkuchen',aliases:['eierkuchen','pfannkuchen'],row:22,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:20.39,intOnly:false},
-  {name:'Muffin Schoko',aliases:['muffin schoko','schoko muffin','schokomuffin'],row:23,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:26.85,intOnly:false,muffin_schoko:true},
+  {name:'Muffin Schoko',aliases:['muffin schoko','schoko muffin','schokomuffin'],row:23,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:26.85,intOnly:true,muffin_schoko:true,bestandUnit:'Stück'},
   {name:'Muffin Milka',aliases:['muffin milka','milka muffin'],row:24,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.49,intOnly:false,muffin_group:true},
   {name:'Muffin Oreo',aliases:['muffin oreo','oreo muffin'],row:25,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.99,intOnly:false,muffin_group:true},
   {name:'Muffin Blaubeere',aliases:['muffin blaubeere','blaubeere muffin'],row:26,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:40.05,intOnly:false,muffin_group:true},
@@ -441,6 +441,7 @@ function calcLandkuchen(){
 
 function calcMuffinSchoko(){
   const a=ARTICLES.find(x=>x.muffin_schoko);
+  // Bestand is entered in Stück (pieces), SOLL is also in Stück
   const bestand=bestandValues[a.row]||0;
   const soll=getSeason(MUFFIN_SCHOKO_SOLL);
   const order=bestand<=soll?1:0;
@@ -449,9 +450,11 @@ function calcMuffinSchoko(){
 
 function calcMuffinGroup(){
   const grp=ARTICLES.filter(a=>a.muffin_group);
+  // Each article bestand is in TRY or KTN - count whole units
   const total=grp.reduce((s,a)=>s+(bestandValues[a.row]||0),0);
   const soll=getSeason(MUFFIN_GROUP_SOLL);
   const diff=Math.max(0,Math.ceil(soll-total));
+  // Sort by lowest bestand → suggest those first
   const sorted=[...grp].sort((a,b)=>(bestandValues[a.row]||0)-(bestandValues[b.row]||0));
   const suggestions=[];let remaining=diff;
   for(const a of sorted){if(remaining<=0)break;suggestions.push({article:a,qty:1});remaining--;}
@@ -501,25 +504,25 @@ function renderSummary(){
   const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen&&!a.muffin_schoko&&!a.muffin_group);
   const rhRows=rhArticles.map(a=>{
     const v=getOrderVal(a.row);
-    const dispUnit=a.bestandUnit||a.unit;
+    const bestandDispUnit=a.bestandUnit||a.unit; // Stück for pizza, unit for others
     const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
-    if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${dispUnit}</td><td class="order-zero">–</td></tr>`;
-    return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${dispUnit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
+    if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${bestandDispUnit}</td><td class="order-zero">–</td></tr>`;
+    return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${bestandDispUnit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
   }).join('');
 
   // Muffin Schoko block
   const msHtml=`<div class="group-summary${ms.order===0?' ok':''}">
-    🧁 <b>Muffin Schoko:</b> Bestand ${ms.bestand} Stück, SOLL ≤${ms.soll} → ${ms.order===1?'<b>1 KTN bestellen</b>':'ausreichend ✅'}
-  </div>${ms.order>0?`<table class="summary-table" style="margin-bottom:1rem;"><tbody><tr><td>Muffin Schoko</td><td style="color:#666;font-size:12px;">${ms.bestand} KTN</td><td class="order-amt">1 KTN</td></tr></tbody></table>`:''}`;
+    🧁 <b>Muffin Schoko:</b> Bestand ${ms.bestand} Stück · SOLL ≤${ms.soll} Stück → ${ms.order===1?'<b>1 KTN bestellen</b>':'ausreichend ✅'}
+  </div>${ms.order>0?`<table class="summary-table" style="margin-bottom:1rem;"><tbody><tr><td>Muffin Schoko</td><td style="color:#666;font-size:12px;">${ms.bestand} Stück</td><td class="order-amt">1 KTN</td></tr></tbody></table>`:''}`;
 
-  // Muffin Group block
+  // Muffin Group block - Landkuchen-style with suggestions
   let mgHtml='';
   if(mg.diff>0){
-    const sugg=mg.suggestions.map(s=>`${s.article.name} (1)`).join(', ');
-    mgHtml=`<div class="group-summary">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Bestand ${mg.total} von SOLL ${mg.soll} → <b>${mg.diff} bestellen</b><br><span style="font-size:12px;color:#555;">Vorschlag: ${sugg}</span></div>
-    <table class="summary-table" style="margin-bottom:1rem;"><tbody>${mg.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="color:#666;font-size:12px;">${bestandValues[s.article.row]||0} ${s.article.unit}</td><td class="order-amt">1 ${s.article.unit}</td></tr>`).join('')}</tbody></table>`;
+    const sugg=mg.suggestions.map(s=>`${s.article.name} (1 ${s.article.unit})`).join(', ');
+    mgHtml=`<div class="group-summary">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Gesamtbestand ${mg.total} von SOLL ${mg.soll} → <b>${mg.diff} bestellen</b><br><span style="font-size:12px;color:#555;">Vorschlag: ${sugg}</span></div>
+    <table class="summary-table" style="margin-bottom:1rem;"><thead><tr><th>Sorte</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${mg.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="color:#666;font-size:12px;">${bestandValues[s.article.row]||0} ${s.article.unit}</td><td class="order-amt">1 ${s.article.unit}</td></tr>`).join('')}</tbody></table>`;
   } else {
-    mgHtml=`<div class="group-summary ok">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Bestand ${mg.total} – ausreichend ✅</div>`;
+    mgHtml=`<div class="group-summary ok">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Gesamtbestand ${mg.total} – ausreichend ✅</div>`;
   }
 
   // Landkuchen block
