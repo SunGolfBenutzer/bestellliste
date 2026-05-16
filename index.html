@@ -242,9 +242,9 @@ const ARTICLES=[
   {name:'Pizza Grillgemüse',aliases:['grillgemüse','gemüse pizza','verdure'],row:21,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:18.60,intOnly:true,pizza:true,bestandUnit:'Stück'},
   {name:'Eierkuchen',aliases:['eierkuchen','pfannkuchen'],row:22,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:20.39,intOnly:false},
   {name:'Muffin Schoko',aliases:['muffin schoko','schoko muffin','schokomuffin'],row:23,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:26.85,intOnly:true,muffin_schoko:true,bestandUnit:'Stück'},
-  {name:'Muffin Milka',aliases:['muffin milka','milka muffin'],row:24,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.49,intOnly:false,muffin_group:true},
-  {name:'Muffin Oreo',aliases:['muffin oreo','oreo muffin'],row:25,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.99,intOnly:false,muffin_group:true},
-  {name:'Muffin Blaubeere',aliases:['muffin blaubeere','blaubeere muffin'],row:26,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:40.05,intOnly:false,muffin_group:true},
+  {name:'Muffin Milka',aliases:['muffin milka','milka muffin'],row:24,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.49,intOnly:true,muffin_group:true,bestandUnit:'Stück',stueckProPack:12},
+  {name:'Muffin Oreo',aliases:['muffin oreo','oreo muffin'],row:25,cat:'TK',sup:'rauchhaupt',unit:'TRY',price:17.99,intOnly:true,muffin_group:true,bestandUnit:'Stück',stueckProPack:12},
+  {name:'Muffin Blaubeere',aliases:['muffin blaubeere','blaubeere muffin'],row:26,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:40.05,intOnly:true,muffin_group:true,bestandUnit:'Stück',stueckProPack:36},
   {name:'Landkuchen Käse-Aprikose',aliases:['käse aprikose','aprikose'],row:27,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
   {name:'Landkuchen Rhabarber',aliases:['rhabarber'],row:28,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
   {name:'Landkuchen Apfel',aliases:['apfelkuchen','apfel kuchen','apfel'],row:29,cat:'TK',sup:'rauchhaupt',unit:'KTN',price:30.00,intOnly:false,lkuchen:true},
@@ -282,7 +282,7 @@ const ARTICLES=[
   {name:'Zwiebeln',aliases:['zwiebeln','zwiebel'],row:68,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
   {name:'Milch 3,5%',aliases:['milch'],row:70,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
   {name:'Quark 500g',aliases:['quark'],row:71,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
-  {name:'Kartoffelpuffer',aliases:['kartoffelpuffer','puffer'],row:72,cat:'Frische',sup:'eigen',unit:'KTN',price:0,intOnly:true},
+  {name:'Kartoffelpuffer',aliases:['kartoffelpuffer','puffer'],row:72,cat:'Frische',sup:'eigen',unit:'KTN',price:0,intOnly:true,bedarfs:true},
   {name:'Apfelmus',aliases:['apfelmus'],row:73,cat:'Frische',sup:'eigen',unit:'Glas',price:0,intOnly:true,bedarfs:true},
   {name:'Süß-Sauersauce',aliases:['süß sauer','süßsauer'],row:75,cat:'Mios',sup:'mios',unit:'KTN',price:0,intOnly:true},
   {name:'Schokolmilch',aliases:['schokolmilch','schoko milch'],row:76,cat:'Mios',sup:'mios',unit:'KTN',price:0,intOnly:true},
@@ -450,15 +450,26 @@ function calcMuffinSchoko(){
 
 function calcMuffinGroup(){
   const grp=ARTICLES.filter(a=>a.muffin_group);
-  // Each article bestand is in TRY or KTN - count whole units
+  // Bestand is in Stück, sum all pieces
   const total=grp.reduce((s,a)=>s+(bestandValues[a.row]||0),0);
-  const soll=getSeason(MUFFIN_GROUP_SOLL);
-  const diff=Math.max(0,Math.ceil(soll-total));
+  const soll=getSeason(MUFFIN_GROUP_SOLL); // in Stück
+  const fehlendStueck=Math.max(0,soll-total);
+  if(fehlendStueck===0)return{total,soll,diff:0,suggestions:[]};
   // Sort by lowest bestand → suggest those first
   const sorted=[...grp].sort((a,b)=>(bestandValues[a.row]||0)-(bestandValues[b.row]||0));
-  const suggestions=[];let remaining=diff;
-  for(const a of sorted){if(remaining<=0)break;suggestions.push({article:a,qty:1});remaining--;}
-  return{total,soll,diff,suggestions};
+  // Build suggestions: order 1 pack of lowest-bestand sorts until enough Stück covered
+  const suggestions=[];
+  let covered=0;
+  for(const a of sorted){
+    if(covered>=fehlendStueck)break;
+    const packs=Math.ceil(Math.max(0,(fehlendStueck-covered)/a.stueckProPack));
+    const orderPacks=Math.min(packs,1); // order 1 at a time per sort
+    suggestions.push({article:a,qty:orderPacks,stueck:orderPacks*a.stueckProPack});
+    covered+=orderPacks*a.stueckProPack;
+  }
+  // Total packs to order
+  const diff=suggestions.reduce((s,x)=>s+x.qty,0);
+  return{total,soll,diff,fehlendStueck,suggestions};
 }
 
 // ---- LOAD ORDER DATA ----
@@ -466,21 +477,36 @@ async function loadOrderData(){
   document.getElementById('summaryLoading').style.display='block';
   document.getElementById('summaryContent').style.display='none';
   document.getElementById('summaryBtns').style.display='none';
-  try{
-    if(!accessToken)accessToken=await getAccessToken();
-    const range=`${SHEET_NAME}!${getOrderCol()}1:${getOrderCol()}80`;
-    const url=`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
-    const r=await fetch(url,{headers:{'Authorization':`Bearer ${accessToken}`}});
-    if(!r.ok){accessToken=null;throw new Error(`Sheets ${r.status}`);}
-    const data=await r.json();
-    orderData={};
-    (data.values||[]).forEach((row,idx)=>{if(row&&row[0]!==undefined&&row[0]!=='')orderData[idx+1]=row[0];});
-    renderSummary();
-    document.getElementById('summaryLoading').style.display='none';
-    document.getElementById('summaryContent').style.display='block';
-    document.getElementById('summaryBtns').style.display='flex';
-  }catch(e){
-    document.getElementById('summaryLoading').textContent='❌ Fehler: '+e.message;
+  // Retry up to 3 times to handle Sheets formula recalculation timing
+  for(let attempt=1;attempt<=3;attempt++){
+    try{
+      if(!accessToken)accessToken=await getAccessToken();
+      const range=`${SHEET_NAME}!${getOrderCol()}1:${getOrderCol()}80`;
+      const url=`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
+      const r=await fetch(url,{headers:{'Authorization':`Bearer ${accessToken}`}});
+      if(!r.ok){accessToken=null;throw new Error(`Sheets ${r.status}`);}
+      const data=await r.json();
+      orderData={};
+      (data.values||[]).forEach((row,idx)=>{if(row&&row[0]!==undefined&&row[0]!=='')orderData[idx+1]=row[0];});
+      // Check if we got reasonable data (at least some non-zero values for articles with bestand 0)
+      const hasData=ARTICLES.filter(a=>!a.bedarfs&&(bestandValues[a.row]||0)===0).some(a=>getOrderVal(a.row)>0);
+      if(hasData||attempt===3){
+        renderSummary();
+        document.getElementById('summaryLoading').style.display='none';
+        document.getElementById('summaryContent').style.display='block';
+        document.getElementById('summaryBtns').style.display='flex';
+        return;
+      }
+      // Not enough data yet, wait and retry
+      document.getElementById('summaryLoading').textContent=`⏳ Warte auf Google Sheets Berechnung... (Versuch ${attempt}/3)`;
+      await new Promise(res=>setTimeout(res,2000));
+    }catch(e){
+      if(attempt===3){
+        document.getElementById('summaryLoading').textContent='❌ Fehler: '+e.message;
+        return;
+      }
+      await new Promise(res=>setTimeout(res,2000));
+    }
   }
 }
 
@@ -518,11 +544,11 @@ function renderSummary(){
   // Muffin Group block - Landkuchen-style with suggestions
   let mgHtml='';
   if(mg.diff>0){
-    const sugg=mg.suggestions.map(s=>`${s.article.name} (1 ${s.article.unit})`).join(', ');
-    mgHtml=`<div class="group-summary">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Gesamtbestand ${mg.total} von SOLL ${mg.soll} → <b>${mg.diff} bestellen</b><br><span style="font-size:12px;color:#555;">Vorschlag: ${sugg}</span></div>
-    <table class="summary-table" style="margin-bottom:1rem;"><thead><tr><th>Sorte</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${mg.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="color:#666;font-size:12px;">${bestandValues[s.article.row]||0} ${s.article.unit}</td><td class="order-amt">1 ${s.article.unit}</td></tr>`).join('')}</tbody></table>`;
+    const sugg=mg.suggestions.map(s=>`${s.article.name} (1 ${s.article.unit} = ${s.article.stueckProPack} Stück)`).join(', ');
+    mgHtml=`<div class="group-summary">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Bestand ${mg.total} Stück · SOLL ${mg.soll} Stück → <b>${mg.fehlendStueck} Stück fehlen</b><br><span style="font-size:12px;color:#555;">Vorschlag: ${sugg}</span></div>
+    <table class="summary-table" style="margin-bottom:1rem;"><thead><tr><th>Sorte</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${mg.suggestions.map(s=>`<tr><td>${s.article.name}</td><td style="color:#666;font-size:12px;">${bestandValues[s.article.row]||0} Stück</td><td class="order-amt">1 ${s.article.unit}</td></tr>`).join('')}</tbody></table>`;
   } else {
-    mgHtml=`<div class="group-summary ok">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Gesamtbestand ${mg.total} – ausreichend ✅</div>`;
+    mgHtml=`<div class="group-summary ok">🧁 <b>Muffin Oreo/Milka/Blaubeere:</b> Bestand ${mg.total} Stück – ausreichend ✅</div>`;
   }
 
   // Landkuchen block
