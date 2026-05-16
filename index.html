@@ -259,7 +259,7 @@ const ARTICLES=[
   {name:'Ketchup portioniert',aliases:['ketchup','tomatenketchup'],row:40,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:11.33,intOnly:true},
   {name:'Mayo portioniert',aliases:['mayo','mayonnaise'],row:41,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:15.93,intOnly:true},
   {name:'Curryketchup',aliases:['curryketchup','curry ketchup'],row:42,cat:'Vorräte',sup:'rauchhaupt',unit:'EIM',price:16.39,intOnly:false},
-  {name:'Kondensmilch',aliases:['kondensmilch','kondens'],row:43,cat:'Vorräte',sup:'rauchhaupt',unit:'TET',price:2.09,intOnly:true},
+  {name:'Kondensmilch',aliases:['kondensmilch','kondens'],row:43,cat:'Vorräte',sup:'rauchhaupt',unit:'KTN',price:2.09*12,intOnly:true,bestandUnit:'TET',kondensmilch:true},
   {name:'Pommessalz',aliases:['pommessalz','salz','würzsalz'],row:44,cat:'Vorräte',sup:'rauchhaupt',unit:'PCK',price:7.59,intOnly:true},
   {name:'Nui Australien',aliases:['nui','australien'],row:47,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:32.67,intOnly:true},
   {name:'Biscoff',aliases:['biscoff'],row:48,cat:'Eis',sup:'rauchhaupt',unit:'KTN',price:0,intOnly:true},
@@ -529,9 +529,16 @@ function renderSummary(){
   // Regular Rauchhaupt articles (excluding special groups)
   const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen&&!a.muffin_schoko&&!a.muffin_group);
   const rhRows=rhArticles.map(a=>{
-    const v=getOrderVal(a.row);
-    const bestandDispUnit=a.bestandUnit||a.unit; // Stück for pizza, unit for others
+    const bestandDispUnit=a.bestandUnit||a.unit;
     const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
+    // Special Kondensmilch logic: bestand in TET, order 1 KTN if ≤4
+    if(a.kondensmilch){
+      const bestand=bestandValues[a.row]||0;
+      const orderKtn=bestand<=4?1:0;
+      if(orderKtn===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} TET</td><td class="order-zero">–</td></tr>`;
+      return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} TET</td><td class="order-amt">1 KTN</td></tr>`;
+    }
+    const v=getOrderVal(a.row);
     if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${bestandDispUnit}</td><td class="order-zero">–</td></tr>`;
     return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${bestandDispUnit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
   }).join('');
@@ -576,7 +583,10 @@ function renderSummary(){
 
   // Total
   let rhTotal=0;
-  rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
+  rhArticles.forEach(a=>{
+    if(a.kondensmilch){const b=bestandValues[a.row]||0;if(b<=4)rhTotal+=a.price;return;}
+    const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;
+  });
   if(ms.order>0)rhTotal+=ms.article.price;
   mg.suggestions.forEach(s=>{rhTotal+=s.article.price;});
   lk.suggestions.forEach(s=>{rhTotal+=s.article.price;});
@@ -657,7 +667,10 @@ function updateOrderTotal(){
   const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen&&!a.muffin_schoko&&!a.muffin_group);
   const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
   let rhTotal=0;
-  rhArticles.forEach(a=>{const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;});
+  rhArticles.forEach(a=>{
+    if(a.kondensmilch){const b=bestandValues[a.row]||0;if(b<=4)rhTotal+=a.price;return;}
+    const v=getOrderVal(a.row);if(v>0)rhTotal+=v*a.price;
+  });
   if(ms.order>0)rhTotal+=ms.article.price;
   mg.suggestions.forEach(s=>{rhTotal+=s.article.price;});
   lk.suggestions.forEach(s=>{rhTotal+=s.article.price;});
@@ -677,7 +690,11 @@ function printRauchhaupt(){
   const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen&&!a.muffin_schoko&&!a.muffin_group);
   const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
   const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
-  let rows=rhArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td><td style="text-align:right;color:#666;">${(getOrderVal(a.row)*a.price).toFixed(2)}€</td></tr>`).join('');
+  let rows=rhArticles.map(a=>{
+    if(a.kondensmilch){const b=bestandValues[a.row]||0;if(b<=4)return`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${a.price.toFixed(2)}€</td></tr>`;return'';}
+    const v=getOrderVal(a.row);if(v<=0)return'';
+    return`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${v} ${a.unit}</td><td style="text-align:right;color:#666;">${(v*a.price).toFixed(2)}€</td></tr>`;
+  }).join('');
   if(ms.order>0)rows+=`<tr><td>Muffin Schoko</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${ms.article.price.toFixed(2)}€</td></tr>`;
   mg.suggestions.forEach(s=>{rows+=`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 ${s.article.unit}</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`;});
   lk.suggestions.forEach(s=>{rows+=`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`;});
