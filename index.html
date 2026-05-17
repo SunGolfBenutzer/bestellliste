@@ -47,6 +47,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .article-row.filled .bestand-input{border-color:#81c995;background:#f0faf3;}
 .check-icon{font-size:16px;opacity:0;transition:opacity 0.2s;text-align:center;}
 .article-row.filled .check-icon{opacity:1;}
+.stepper{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.stepper-btn{width:32px;height:32px;border:1px solid #ddd;border-radius:6px;background:#f5f5f5;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#333;-webkit-tap-highlight-color:transparent;}
+.stepper-btn:active{background:#e0e0e0;}
 .bedarf-tag{font-size:11px;padding:3px 8px;border-radius:12px;background:#fff3e0;color:#e65100;white-space:nowrap;}
 .mic-card{background:#fff;border-radius:14px;border:1px solid #e0e0e0;padding:1rem;margin-bottom:1rem;position:sticky;bottom:70px;z-index:10;box-shadow:0 2px 12px rgba(0,0,0,0.1);}
 .mic-row{display:flex;align-items:center;gap:10px;}
@@ -305,12 +308,16 @@ let clientEmail='',privateKey='',orderData={},bedarfOrderValues={};
 
 // ---- SETUP ----
 function loadSetup(){
-  try{clientEmail=localStorage.getItem('sa_email')||'';privateKey=localStorage.getItem('sa_key')||'';}catch(e){}
+  try{clientEmail=localStorage.getItem('sa_email')||'';privateKey=fixKey(localStorage.getItem('sa_key')||'');}catch(e){}
   if(clientEmail&&privateKey){document.getElementById('setupScreen').style.display='none';document.getElementById('mainApp').style.display='block';initApp();}
+}
+function fixKey(k){
+  // Replace literal \n with real newlines, remove surrounding quotes
+  return k.replace(/\\n/g,'\n').replace(/^["']|["']$/g,'').trim();
 }
 function saveSetup(){
   const e=document.getElementById('setupEmail').value.trim();
-  const k=document.getElementById('setupKey').value.trim();
+  const k=fixKey(document.getElementById('setupKey').value);
   if(!e||!k){document.getElementById('setupError').classList.add('show');return;}
   try{localStorage.setItem('sa_email',e);localStorage.setItem('sa_key',k);}catch(err){}
   clientEmail=e;privateKey=k;
@@ -376,7 +383,7 @@ function renderArticleList(){
     if(a.bedarfs)return`<div class="article-row${filled?' filled':''}"><div class="article-row-info"><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)}</div></div><span class="bedarf-tag">Bedarf prüfen</span><span class="check-icon">✅</span></div>`;
     const step=a.intOnly?'1':'0.25';
     const dispUnit=a.bestandUnit||a.unit;
-    return`<div class="article-row${filled?' filled':''}" id="arow-${a.row}"><div class="article-row-info"><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${dispUnit}</div></div><input type="number" class="bestand-input" id="inp-${a.row}" placeholder="Bestand" step="${step}" min="0" value="${val!==undefined?val:''}" oninput="handleInput(${a.row},this.value,${a.intOnly})" onblur="saveRow(${a.row})" style="width:90px;flex-shrink:0;" /><span class="check-icon" style="width:30px;flex-shrink:0;">✅</span></div>`;
+    return`<div class="article-row${filled?' filled':''}" id="arow-${a.row}"><div class="article-row-info"><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${dispUnit}</div></div><div class="stepper"><button class="stepper-btn" onclick="stepInput(${a.row},${a.intOnly},-1)">−</button><input type="number" class="bestand-input" id="inp-${a.row}" placeholder="0" step="${step}" min="0" value="${val!==undefined?val:''}" oninput="handleInput(${a.row},this.value,${a.intOnly})" onblur="saveRow(${a.row})" style="width:60px;flex-shrink:0;" /><button class="stepper-btn" onclick="stepInput(${a.row},${a.intOnly},1)">+</button></div><span class="check-icon" style="width:24px;flex-shrink:0;">✅</span></div>`;
   }).join('');
 }
 function supLabel(s){return s==='rauchhaupt'?'Rauchhaupt':s==='mios'?'Mios':'Eigeneinkauf';}
@@ -702,7 +709,16 @@ function renderSummary(){
     </div>`;
 }
 
-function setFreeRow(group,idx,field,val){
+function stepInput(row,intOnly,delta){
+  const inp=document.getElementById(`inp-${row}`);
+  if(!inp)return;
+  const step=intOnly?1:0.25;
+  const cur=parseFloat(inp.value)||0;
+  const newVal=Math.max(0,Math.round((cur+delta*step)*100)/100);
+  inp.value=newVal;
+  handleInput(row,String(newVal),intOnly);
+  saveRow(row);
+}
   if(!window.freeRows)window.freeRows={mios:[{},{},{}],eigen:[{},{},{}]};
   if(!window.freeRows[group])window.freeRows[group]=[{},{},{}];
   window.freeRows[group][idx][field]=val;
