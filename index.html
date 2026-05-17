@@ -284,8 +284,8 @@ const ARTICLES=[
   {name:'Quark 500g',aliases:['quark'],row:71,cat:'Frische',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
   {name:'Kartoffelpuffer',aliases:['kartoffelpuffer','puffer'],row:72,cat:'Frische',sup:'eigen',unit:'KTN',price:0,intOnly:true,bedarfs:true},
   {name:'Apfelmus',aliases:['apfelmus'],row:73,cat:'Frische',sup:'eigen',unit:'Glas',price:0,intOnly:true,bedarfs:true},
-  {name:'Süß-Sauersauce',aliases:['süß sauer','süßsauer'],row:75,cat:'Mios',sup:'mios',unit:'KTN',price:0,intOnly:true},
-  {name:'Schokolmilch',aliases:['schokolmilch','schoko milch'],row:76,cat:'Mios',sup:'mios',unit:'KTN',price:0,intOnly:true},
+  {name:'Süß-Sauersauce',aliases:['süß sauer','süßsauer'],row:75,cat:'Mios',sup:'mios',unit:'KTN',price:0,intOnly:true,bedarfs:true},
+  {name:'Schokolmilch',aliases:['schokolmilch','schoko milch'],row:76,cat:'Mios',sup:'mios',unit:'KTN',price:0,intOnly:true,bedarfs:true},
   {name:'Schwarzbier',aliases:['schwarzbier'],row:77,cat:'Mios',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
   {name:'Clausthaler alkoholfrei',aliases:['clausthaler','alkoholfrei'],row:78,cat:'Mios',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
   {name:'Pommesspießer',aliases:['pommesspießer','spießer'],row:79,cat:'Mios',sup:'eigen',unit:'–',price:0,intOnly:true,bedarfs:true},
@@ -427,13 +427,32 @@ async function checkAndProceed(){
   goStep(4);
 }
 
-// ---- SPECIAL GROUP CALCULATIONS ----
+// ---- ROTATING SUGGESTIONS ----
+function getRotationOffset(groupKey, groupSize){
+  try{
+    const stored=JSON.parse(localStorage.getItem('rotation_'+groupKey)||'{}');
+    const weekKey=new Date().toISOString().slice(0,10); // changes daily
+    if(stored.date===weekKey)return stored.offset;
+    // New day/week: advance offset
+    const newOffset=((stored.offset||0)+1)%groupSize;
+    localStorage.setItem('rotation_'+groupKey,JSON.stringify({date:weekKey,offset:newOffset}));
+    return newOffset;
+  }catch(e){return 0;}
+}
+
+
 function calcLandkuchen(){
   const lk=ARTICLES.filter(a=>a.lkuchen);
   const total=lk.reduce((s,a)=>s+(bestandValues[a.row]||0),0);
   const soll=getSeason(LK_SOLL);
   const diff=Math.max(0,Math.ceil(soll-total));
-  const sorted=[...lk].sort((a,b)=>(bestandValues[a.row]||0)-(bestandValues[b.row]||0));
+  if(diff===0)return{total,soll,diff:0,suggestions:[]};
+  const offset=getRotationOffset('landkuchen',lk.length);
+  const sorted=[...lk].sort((a,b)=>{
+    const da=bestandValues[a.row]||0,db=bestandValues[b.row]||0;
+    if(da!==db)return da-db;
+    return(lk.indexOf(a)+offset)%lk.length-(lk.indexOf(b)+offset)%lk.length;
+  });
   const suggestions=[];let remaining=diff;
   for(const a of sorted){if(remaining<=0)break;suggestions.push({article:a,qty:1});remaining--;}
   return{total,soll,diff,suggestions};
@@ -450,24 +469,24 @@ function calcMuffinSchoko(){
 
 function calcMuffinGroup(){
   const grp=ARTICLES.filter(a=>a.muffin_group);
-  // Bestand is in Stück, sum all pieces
   const total=grp.reduce((s,a)=>s+(bestandValues[a.row]||0),0);
-  const soll=getSeason(MUFFIN_GROUP_SOLL); // in Stück
+  const soll=getSeason(MUFFIN_GROUP_SOLL);
   const fehlendStueck=Math.max(0,soll-total);
   if(fehlendStueck===0)return{total,soll,diff:0,suggestions:[]};
-  // Sort by lowest bestand → suggest those first
-  const sorted=[...grp].sort((a,b)=>(bestandValues[a.row]||0)-(bestandValues[b.row]||0));
-  // Build suggestions: order 1 pack of lowest-bestand sorts until enough Stück covered
-  const suggestions=[];
-  let covered=0;
+  // Rotation: when bestand is equal, rotate which sort gets suggested first
+  const offset=getRotationOffset('muffin_group',grp.length);
+  const sorted=[...grp].sort((a,b)=>{
+    const da=bestandValues[a.row]||0,db=bestandValues[b.row]||0;
+    if(da!==db)return da-db;
+    return(grp.indexOf(a)+offset)%grp.length-(grp.indexOf(b)+offset)%grp.length;
+  });
+  const suggestions=[];let covered=0;
   for(const a of sorted){
     if(covered>=fehlendStueck)break;
-    const packs=Math.ceil(Math.max(0,(fehlendStueck-covered)/a.stueckProPack));
-    const orderPacks=Math.min(packs,1); // order 1 at a time per sort
+    const orderPacks=1;
     suggestions.push({article:a,qty:orderPacks,stueck:orderPacks*a.stueckProPack});
     covered+=orderPacks*a.stueckProPack;
   }
-  // Total packs to order
   const diff=suggestions.reduce((s,x)=>s+x.qty,0);
   return{total,soll,diff,fehlendStueck,suggestions};
 }
@@ -598,16 +617,36 @@ function renderSummary(){
     ${!totalOk?`<br><span style="font-size:13px;">Mindestbestellwert ${MIN_ORDER}€ noch nicht erreicht! (${(MIN_ORDER-rhTotal).toFixed(2)}€ fehlen)</span>`:'<br><span style="font-size:13px;">Freihauslieferung ✓</span>'}
   </div>`;
 
-  // Mios
-  const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
+  // Mios - now bedarfs articles with input fields
+  const bedarfsMios=ARTICLES.filter(a=>a.sup==='mios'&&a.bedarfs);
+  // Free extra rows for Mios (3 blank article+amount fields)
+  const miosFreeHtml=[0,1,2].map(i=>`<div class="bedarf-input-row" style="grid-template-columns:1fr 1fr 80px;">
+    <input type="text" class="bedarf-order-input" id="mios-free-name-${i}" placeholder="Artikel..." style="text-align:left;font-size:13px;"
+      value="${(window.freeRows&&window.freeRows.mios&&window.freeRows.mios[i])?window.freeRows.mios[i].name:''}"
+      oninput="setFreeRow('mios',${i},'name',this.value);" />
+    <input type="number" class="bedarf-order-input" id="mios-free-qty-${i}" placeholder="Menge" min="0" step="1"
+      value="${(window.freeRows&&window.freeRows.mios&&window.freeRows.mios[i])?window.freeRows.mios[i].qty:''}"
+      oninput="setFreeRow('mios',${i},'qty',this.value);" />
+    <div style="font-size:11px;color:#999;text-align:center;">frei</div>
+  </div>`).join('');
+
   let miosHtml='';
-  if(miosArticles.length){
-    const miosRows=miosArticles.map(a=>{
-      const v=getOrderVal(a.row);const ist=bestandValues[a.row]!==undefined?bestandValues[a.row]:'0';
-      if(v===0)return`<tr><td style="color:#999">${a.name}</td><td style="color:#ccc;font-size:12px;">${ist} ${a.unit}</td><td class="order-zero">–</td></tr>`;
-      return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
-    }).join('');
-    miosHtml=`<div class="card"><div class="card-title">🏪 Mios Bestellung</div><table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${miosRows}</tbody></table></div>`;
+  if(bedarfsMios.length||true){
+    const miosInputHtml=bedarfsMios.map(a=>`<div class="bedarf-input-row">
+      <div><div style="font-size:13px;font-weight:500;">${a.name}</div><div style="font-size:11px;color:#999;">${a.unit} · Mios</div></div>
+      <input type="number" class="bedarf-order-input" id="bedarf-${a.row}" placeholder="Menge" min="0" step="1"
+        value="${bedarfOrderValues[a.row]||''}"
+        oninput="bedarfOrderValues[${a.row}]=this.value?parseInt(this.value):0;" />
+      <button class="bedarf-save-btn" id="bedarf-btn-${a.row}" onclick="saveBedarfRow(${a.row},'mios')">Speichern</button>
+    </div>`).join('');
+    miosHtml=`<div class="card"><div class="card-title">🏪 Mios Bestellung</div>
+      <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:0.5rem;">📝 Bestellmenge eintragen:</div>
+      ${miosInputHtml}
+      <div style="margin-top:0.75rem;border-top:1px dashed #ddd;padding-top:0.75rem;">
+        <div style="font-size:12px;color:#999;margin-bottom:0.5rem;">+ Weitere Artikel:</div>
+        ${miosFreeHtml}
+      </div>
+    </div>`;
   }
 
   // Eigeneinkauf
@@ -619,6 +658,17 @@ function renderSummary(){
     return`<tr><td>${a.name}</td><td style="color:#666;font-size:12px;">${ist} ${a.unit}</td><td class="order-amt">${v} ${a.unit}</td></tr>`;
   }).join('');
 
+  // Free extra rows for Eigeneinkauf (3 blank fields)
+  const eigenFreeHtml=[0,1,2].map(i=>`<div class="bedarf-input-row" style="grid-template-columns:1fr 1fr 80px;">
+    <input type="text" class="bedarf-order-input" id="eigen-free-name-${i}" placeholder="Artikel..." style="text-align:left;font-size:13px;"
+      value="${(window.freeRows&&window.freeRows.eigen&&window.freeRows.eigen[i])?window.freeRows.eigen[i].name:''}"
+      oninput="setFreeRow('eigen',${i},'name',this.value);" />
+    <input type="number" class="bedarf-order-input" id="eigen-free-qty-${i}" placeholder="Menge" min="0" step="1"
+      value="${(window.freeRows&&window.freeRows.eigen&&window.freeRows.eigen[i])?window.freeRows.eigen[i].qty:''}"
+      oninput="setFreeRow('eigen',${i},'qty',this.value);" />
+    <div style="font-size:11px;color:#999;text-align:center;">frei</div>
+  </div>`).join('');
+
   const bedarfsEigenHtml=`<div style="margin-top:1rem;border-top:2px solid #e0e0e0;padding-top:1rem;">
     <div style="font-size:13px;font-weight:600;color:#555;margin-bottom:0.5rem;">🛍️ Einkaufsliste – Menge eintragen:</div>
     ${bedarfsEigen.map(a=>`<div class="bedarf-input-row">
@@ -628,6 +678,10 @@ function renderSummary(){
         oninput="bedarfOrderValues[${a.row}]=this.value?parseInt(this.value):0;" />
       <button class="bedarf-save-btn" id="bedarf-btn-${a.row}" onclick="saveBedarfRow(${a.row},'eigen')">Speichern</button>
     </div>`).join('')}
+    <div style="margin-top:0.75rem;border-top:1px dashed #ddd;padding-top:0.75rem;">
+      <div style="font-size:12px;color:#999;margin-bottom:0.5rem;">+ Weitere Artikel:</div>
+      ${eigenFreeHtml}
+    </div>
   </div>`;
 
   document.getElementById('summaryContent').innerHTML=`
@@ -645,6 +699,12 @@ function renderSummary(){
       ${eigenRows?`<table class="summary-table"><thead><tr><th>Artikel</th><th>Bestand</th><th style="text-align:right;">Bestellen</th></tr></thead><tbody>${eigenRows}</tbody></table>`:''}
       ${bedarfsEigenHtml}
     </div>`;
+}
+
+function setFreeRow(group,idx,field,val){
+  if(!window.freeRows)window.freeRows={mios:[{},{},{}],eigen:[{},{},{}]};
+  if(!window.freeRows[group])window.freeRows[group]=[{},{},{}];
+  window.freeRows[group][idx][field]=val;
 }
 
 async function saveBedarfRow(row,type){
@@ -688,7 +748,6 @@ function printRauchhaupt(){
   const sl=season==='regulaer'?'Regulärbetrieb':'Ferienbetrieb';
   const lk=calcLandkuchen();const ms=calcMuffinSchoko();const mg=calcMuffinGroup();
   const rhArticles=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&!a.bedarfs&&!a.lkuchen&&!a.muffin_schoko&&!a.muffin_group);
-  const miosArticles=ARTICLES.filter(a=>a.sup==='mios'&&!a.bedarfs);
   const bedarfsRH=ARTICLES.filter(a=>a.sup==='rauchhaupt'&&a.bedarfs);
   let rows=rhArticles.map(a=>{
     if(a.kondensmilch){const b=bestandValues[a.row]||0;if(b<=4)return`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${a.price.toFixed(2)}€</td></tr>`;return'';}
@@ -699,7 +758,12 @@ function printRauchhaupt(){
   mg.suggestions.forEach(s=>{rows+=`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 ${s.article.unit}</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`;});
   lk.suggestions.forEach(s=>{rows+=`<tr><td>${s.article.name}</td><td style="text-align:right;font-weight:700;">1 KTN</td><td style="text-align:right;color:#666;">${s.article.price.toFixed(2)}€</td></tr>`;});
   bedarfsRH.filter(a=>(bedarfOrderValues[a.row]||0)>0).forEach(a=>{rows+=`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${bedarfOrderValues[a.row]} ${a.unit}</td><td style="text-align:right;color:#666;">${a.price>0?(bedarfOrderValues[a.row]*a.price).toFixed(2)+'€':''}</td></tr>`;});
-  let mRows=miosArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td><td></td></tr>`).join('');
+  const bedarfsMios=ARTICLES.filter(a=>a.sup==='mios'&&a.bedarfs);
+  let mRows=bedarfsMios.filter(a=>(bedarfOrderValues[a.row]||0)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${bedarfOrderValues[a.row]} ${a.unit}</td><td></td></tr>`).join('');
+  // Add free Mios rows
+  if(window.freeRows&&window.freeRows.mios){
+    window.freeRows.mios.forEach(r=>{if(r.name&&r.qty>0)mRows+=`<tr><td>${r.name}</td><td style="text-align:right;font-weight:700;">${r.qty}</td><td></td></tr>`;});
+  }
   let rhTotal=0;
   rhArticles.filter(a=>getOrderVal(a.row)>0).forEach(a=>rhTotal+=getOrderVal(a.row)*a.price);
   if(ms.order>0)rhTotal+=ms.article.price;
@@ -720,6 +784,10 @@ function printEigen(){
   const bedarfsEigen=ARTICLES.filter(a=>a.sup==='eigen'&&a.bedarfs);
   let rows=eigenArticles.filter(a=>getOrderVal(a.row)>0).map(a=>`<tr><td>${a.name}</td><td style="text-align:right;font-weight:700;">${getOrderVal(a.row)} ${a.unit}</td></tr>`).join('');
   bedarfsEigen.forEach(a=>{const v=bedarfOrderValues[a.row]||0;rows+=`<tr><td>${a.name}</td><td style="text-align:right;${v>0?'font-weight:700;':'color:#e65100;'}">${v>0?v+' –':'prüfen'}</td></tr>`;});
+  // Add free Eigeneinkauf rows
+  if(window.freeRows&&window.freeRows.eigen){
+    window.freeRows.eigen.forEach(r=>{if(r.name&&r.qty>0)rows+=`<tr><td>${r.name}</td><td style="text-align:right;font-weight:700;">${r.qty}</td></tr>`;});
+  }
   openPrintWindow('🛒 Eigeneinkauf',di,do_,sl,`<table style="width:100%;border-collapse:collapse;">${rows}</table>`);
 }
 function openPrintWindow(title,di,do_,sl,content){
