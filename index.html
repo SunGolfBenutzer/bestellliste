@@ -37,7 +37,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .filter-chip{padding:5px 12px;font-size:12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;background:#fff;color:#666;white-space:nowrap;}
 .filter-chip.active{background:#e8f0fe;color:#1a73e8;border-color:#a8c7fa;}
 .article-list{display:flex;flex-direction:column;gap:6px;max-height:480px;overflow-y:auto;}
-.article-row{display:grid;grid-template-columns:1fr 90px 30px;gap:8px;align-items:center;padding:10px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#fff;transition:all 0.2s;}
+.article-row{display:flex;flex-direction:row;gap:8px;align-items:center;padding:10px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#fff;transition:all 0.2s;}
+.article-row-info{flex:1;min-width:0;}
 .article-row.filled{border-color:#81c995;background:#f0faf3;}
 .article-name{font-size:13px;font-weight:500;}
 .article-meta{font-size:11px;color:#999;}
@@ -372,10 +373,10 @@ function renderArticleList(){
   const filtered=activeFilter==='Alle'?ARTICLES:ARTICLES.filter(a=>a.cat===activeFilter);
   document.getElementById('articleList3').innerHTML=filtered.map(a=>{
     const val=bestandValues[a.row];const filled=val!==undefined;
-    if(a.bedarfs)return`<div class="article-row${filled?' filled':''}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)}</div></div><span class="bedarf-tag">Bedarf prüfen</span><span class="check-icon">✅</span></div>`;
+    if(a.bedarfs)return`<div class="article-row${filled?' filled':''}"><div class="article-row-info"><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)}</div></div><span class="bedarf-tag">Bedarf prüfen</span><span class="check-icon">✅</span></div>`;
     const step=a.intOnly?'1':'0.25';
     const dispUnit=a.bestandUnit||a.unit;
-    return`<div class="article-row${filled?' filled':''}" id="arow-${a.row}"><div><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${dispUnit}</div></div><input type="number" class="bestand-input" id="inp-${a.row}" placeholder="Bestand" step="${step}" min="0" value="${val!==undefined?val:''}" oninput="handleInput(${a.row},this.value,${a.intOnly})" onblur="saveRow(${a.row})" /><span class="check-icon">✅</span></div>`;
+    return`<div class="article-row${filled?' filled':''}" id="arow-${a.row}"><div class="article-row-info"><div class="article-name">${a.name}</div><div class="article-meta">${a.cat} · ${supLabel(a.sup)} · ${dispUnit}</div></div><input type="number" class="bestand-input" id="inp-${a.row}" placeholder="Bestand" step="${step}" min="0" value="${val!==undefined?val:''}" oninput="handleInput(${a.row},this.value,${a.intOnly})" onblur="saveRow(${a.row})" style="width:90px;flex-shrink:0;" /><span class="check-icon" style="width:30px;flex-shrink:0;">✅</span></div>`;
   }).join('');
 }
 function supLabel(s){return s==='rauchhaupt'?'Rauchhaupt':s==='mios'?'Mios':'Eigeneinkauf';}
@@ -815,11 +816,23 @@ function fuzzyMatch(text,article){
   for(const w of words){if(w.length>2&&lower.includes(w))score+=w.length;}
   return score;
 }
+function wordsToNum(text){
+  const map={'null':0,'zero':0,'ein':1,'eins':1,'eine':1,'zwei':2,'three':3,'drei':3,'vier':4,'fünf':5,'sechs':6,'sieben':7,'acht':8,'neun':9,'zehn':10,'elf':11,'zwölf':12,'dreizehn':13,'vierzehn':14,'fünfzehn':15,'sechzehn':16,'siebzehn':17,'achtzehn':18,'neunzehn':19,'zwanzig':20,'dreißig':30,'vierzig':40,'fünfzig':50,'sechzig':60,'siebzig':70,'achtzig':80,'neunzig':90,'hundert':100};
+  const lower=text.toLowerCase();
+  // First try digit match
+  const numMatch=lower.match(/(\d+[,.]?\d*)/);
+  if(numMatch)return parseFloat(numMatch[1].replace(',','.'));
+  // Try word match
+  for(const [word,val] of Object.entries(map)){
+    if(lower.includes(word))return val;
+  }
+  return null;
+}
+
 function parseMic(text){
   const lower=text.toLowerCase();
-  const numMatch=lower.match(/(\d+[,.]?\d*)/);
-  if(!numMatch){showMicResult('err',`Keine Zahl: „${text}"`);return;}
-  const value=parseFloat(numMatch[1].replace(',','.'));
+  const value=wordsToNum(text);
+  if(value===null){showMicResult('err',`Keine Zahl erkannt: „${text}"`);return;}
   let scored=ARTICLES.map(a=>({article:a,score:fuzzyMatch(text,a)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
   if(scored.length===0){showMicResult('err',`Nicht erkannt: „${text}"`);return;}
   const best=scored[0],secondBest=scored[1];
