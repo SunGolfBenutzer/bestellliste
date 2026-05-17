@@ -307,13 +307,12 @@ let recognition=null,isListening=false,pendingMic=null;
 let clientEmail='',privateKey='',orderData={},bedarfOrderValues={};
 
 // ---- SETUP ----
+function fixKey(k){
+  return k.replace(/\\n/g,'\n').replace(/^["']|["']$/g,'').trim();
+}
 function loadSetup(){
   try{clientEmail=localStorage.getItem('sa_email')||'';privateKey=fixKey(localStorage.getItem('sa_key')||'');}catch(e){}
   if(clientEmail&&privateKey){document.getElementById('setupScreen').style.display='none';document.getElementById('mainApp').style.display='block';initApp();}
-}
-function fixKey(k){
-  // Replace literal \n with real newlines, remove surrounding quotes
-  return k.replace(/\\n/g,'\n').replace(/^["']|["']$/g,'').trim();
 }
 function saveSetup(){
   const e=document.getElementById('setupEmail').value.trim();
