@@ -718,6 +718,8 @@ function stepInput(row,intOnly,delta){
   handleInput(row,String(newVal),intOnly);
   saveRow(row);
 }
+
+function setFreeRow(group,idx,field,val){
   if(!window.freeRows)window.freeRows={mios:[{},{},{}],eigen:[{},{},{}]};
   if(!window.freeRows[group])window.freeRows[group]=[{},{},{}];
   window.freeRows[group][idx][field]=val;
